@@ -14,6 +14,7 @@
     --accent-ink:#382508;
     --accent-soft:#F3DDAF;
     --danger:#B34A3E;
+    --good:#3F7D5C;
     --stage-cold:#8B8371;
     --stage-qualification:#B97D3A;
     --stage-qualified:#3F7D5C;
@@ -34,6 +35,7 @@
       --accent-ink:#241804;
       --accent-soft:#4A3A1C;
       --danger:#E08476;
+      --good:#6FB98F;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
     }
   }
@@ -49,6 +51,7 @@
     --accent-ink:#241804;
     --accent-soft:#4A3A1C;
     --danger:#E08476;
+    --good:#6FB98F;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
   }
 
@@ -102,6 +105,7 @@
   .btn.ghost{background:transparent;}
   .btn.danger{color:var(--danger); border-color:var(--danger);}
   .btn.small{padding:5px 9px; font-size:12.5px; border-radius:8px;}
+  .btn[disabled]{opacity:.4; cursor:default;}
 
   .stats{
     display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;
@@ -114,6 +118,21 @@
   .stat .value{font-family:'Fraunces',serif; font-size:24px; font-weight:600; font-variant-numeric:tabular-nums;}
   .stat .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
 
+  .task-banner{
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:12px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .task-banner h3{font-size:13.5px; font-weight:600; color:var(--accent-ink);}
+  .task-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0;
+    font-size:13px; cursor:pointer; border-top:1px solid rgba(56,37,8,.12);
+  }
+  .task-row:first-of-type{border-top:none;}
+  .task-row .who{font-weight:600; color:var(--accent-ink);}
+  .task-row .what{color:var(--accent-ink); opacity:.85;}
+  .task-row .when{color:var(--accent-ink); font-variant-numeric:tabular-nums; opacity:.75; white-space:nowrap;}
+  .task-row.overdue .when{color:var(--danger); font-weight:600;}
+
   .board{
     display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;
     scroll-snap-type:x proximity;
@@ -122,7 +141,9 @@
     flex:0 0 288px; scroll-snap-align:start;
     background:var(--surface-soft); border:1px solid var(--line); border-radius:14px;
     display:flex; flex-direction:column; max-height:calc(100vh - 210px); min-height:220px;
+    transition:border-color .12s, background .12s;
   }
+  .column.drag-over{border-color:var(--accent); background:var(--accent-soft);}
   .column-head{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
     padding:12px 12px 10px; border-bottom:1px solid var(--line);
@@ -132,7 +153,7 @@
     font-size:11.5px; color:var(--ink-soft); background:var(--surface);
     border:1px solid var(--line); border-radius:999px; padding:1px 8px; font-variant-numeric:tabular-nums;
   }
-  .column-body{padding:10px; display:flex; flex-direction:column; gap:8px; overflow-y:auto;}
+  .column-body{padding:10px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex:1;}
   .column-empty{
     color:var(--ink-faint); font-size:12.5px; text-align:center; padding:18px 8px;
     border:1px dashed var(--line); border-radius:10px;
@@ -140,14 +161,20 @@
 
   .card{
     background:var(--surface); border:1px solid var(--line); border-left-width:3px;
-    border-radius:11px; padding:10px 11px; cursor:pointer; box-shadow:var(--shadow);
+    border-radius:11px; padding:10px 11px; cursor:grab; box-shadow:var(--shadow);
     display:flex; flex-direction:column; gap:6px;
   }
   .card:hover{border-color:var(--accent);}
+  .card.dragging{opacity:.4;}
   .card .name{font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; line-height:1.25;}
   .card .phone{font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
   .card .snippet{font-size:12.5px; color:var(--ink-soft); line-height:1.4;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .card .task-pill{
+    font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:999px; width:fit-content;
+    background:var(--danger); color:#fff;
+  }
+  .card .task-pill.soon{background:var(--stage-qualification);}
   .badges{display:flex; gap:5px; flex-wrap:wrap;}
   .badge{
     font-size:11px; font-weight:600; padding:2px 7px; border-radius:999px;
@@ -163,6 +190,12 @@
   .stepper button:hover{color:var(--ink); border-color:var(--accent);}
   .stepper button:disabled{opacity:.3; cursor:default;}
   .stepper button:disabled:hover{color:var(--ink-soft); border-color:var(--line);}
+  .card-chat{display:flex; gap:3px;}
+  .card-chat a{
+    width:22px; height:22px; border-radius:6px; border:1px solid var(--line); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; font-size:12px; text-decoration:none;
+  }
+  .card-chat a:hover{border-color:var(--accent);}
 
   .scrim{position:fixed; inset:0; background:rgba(20,15,6,.32); z-index:20;}
   .drawer{
@@ -191,9 +224,39 @@
   }
   .close-x:hover{background:var(--surface-soft); color:var(--ink);}
 
+  .quick-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .quick-actions a, .quick-actions button{
+    display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+    border:1px solid var(--line); background:var(--surface-soft); color:var(--ink);
+    padding:7px 11px; border-radius:9px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .quick-actions a:hover, .quick-actions button:hover{border-color:var(--accent);}
+
+  .box{
+    border:1px solid var(--line); border-radius:11px; padding:12px; display:flex; flex-direction:column;
+    gap:8px; background:var(--surface-soft);
+  }
+  .box h3{font-size:13px; font-weight:600;}
+  .box .muted{font-size:12px; color:var(--ink-soft);}
+  .note-add-row{display:flex; gap:6px;}
+  .note-add-row input{flex:1;}
+
+  .script-item{
+    border:1px solid var(--line); border-radius:10px; padding:10px; display:flex; flex-direction:column;
+    gap:6px; background:var(--surface);
+  }
+  .script-item .title{font-weight:600; font-size:13.5px;}
+  .script-item .text{font-size:12.5px; color:var(--ink-soft); white-space:pre-wrap;}
+  .script-item .row{display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;}
+
   .banner{
     background:var(--surface); border:1px solid var(--line); border-radius:10px;
     padding:10px 14px; font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;
+  }
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:30;
+    background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:999px; font-size:13px;
+    font-weight:600; box-shadow:var(--shadow);
   }
   [hidden]{display:none!important;}
 
@@ -214,11 +277,16 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
       </div>
+      <button class="btn" id="scriptsBtn">📜 Скрипти</button>
       <button class="btn primary" id="addLeadBtn">+ Новий лід</button>
     </div>
   </header>
 
   <div id="dbBanner" class="banner" hidden></div>
+  <div id="taskBanner" class="task-banner" hidden>
+    <h3>📋 Завдання на сьогодні й прострочені</h3>
+    <div id="taskList"></div>
+  </div>
 
   <section class="stats" id="stats"></section>
 
@@ -236,6 +304,9 @@
       <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
       <div class="field"><label for="f-phone">Телефон / контакт</label><input id="f-phone" type="text" placeholder="+380…"></div>
     </div>
+
+    <div class="quick-actions" id="quickActions"></div>
+
     <div class="field-row">
       <div class="field">
         <label for="f-stage">Стадія</label>
@@ -257,13 +328,49 @@
     </div>
     <div class="field"><label for="f-proposal">Пропозиція / заперечення</label><textarea id="f-proposal" rows="2"></textarea></div>
     <div class="field"><label for="f-deal">Деталі угоди</label><textarea id="f-deal" rows="2" placeholder="Сума, юніт, умови…"></textarea></div>
-    <div class="field"><label for="f-notes">Нотатки / історія</label><textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea></div>
+
+    <div class="field-row">
+      <div class="field"><label for="f-next">Наступний крок</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
+      <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
+    </div>
+
+    <div class="field">
+      <label for="f-notes">Нотатки / історія</label>
+      <textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea>
+      <div class="note-add-row">
+        <input id="quickNote" type="text" placeholder="Швидка нотатка з датою…">
+        <button class="btn small" id="addNoteBtn">+ Додати</button>
+      </div>
+    </div>
+
+    <div class="box" id="sendBox" hidden>
+      <h3>💬 Написати ліду</h3>
+      <div class="muted">Прямої відправки з дашборду немає — обираєте текст, копіюєте й надсилаєте вручну.</div>
+      <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
+      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
+      <button class="btn small" id="copyTextBtn" style="align-self:flex-start;">📋 Копіювати текст</button>
+    </div>
   </div>
   <div class="drawer-foot">
     <button class="btn danger" id="deleteLeadBtn">Видалити</button>
     <button class="btn primary" id="saveLeadBtn">Зберегти</button>
   </div>
 </aside>
+
+<aside class="drawer" id="scriptsDrawer" hidden>
+  <div class="drawer-head">
+    <h2>Скрипти повідомлень</h2>
+    <button class="close-x" id="closeScripts" aria-label="Закрити">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field"><label for="ns-title">Назва</label><input id="ns-title" type="text" placeholder="Наприклад: Заперечення «дорого»"></div>
+    <div class="field"><label for="ns-text">Текст</label><textarea id="ns-text" rows="4" placeholder="Готовий текст повідомлення…"></textarea></div>
+    <button class="btn primary small" id="addScriptBtn" style="align-self:flex-start;">Додати скрипт</button>
+    <div id="scriptsList" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;"></div>
+  </div>
+</aside>
+
+<div id="toast" class="toast" hidden></div>
 
 <script>
 (function(){
@@ -280,16 +387,38 @@
   const statsEl = document.getElementById('stats');
   const searchEl = document.getElementById('search');
   const bannerEl = document.getElementById('dbBanner');
+  const taskBanner = document.getElementById('taskBanner');
+  const taskList = document.getElementById('taskList');
   const drawer = document.getElementById('drawer');
+  const scriptsDrawer = document.getElementById('scriptsDrawer');
   const scrim = document.getElementById('scrim');
+  const toastEl = document.getElementById('toast');
 
   let leads = [];
-  let dbCol = null;
+  let scripts = [];
+  let leadsCol = null;
+  let scriptsCol = null;
   let editingId = null;
   let query = '';
+  let toastTimer = null;
 
   function esc(s){
     return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function toast(text){
+    toastEl.textContent = text;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ toastEl.hidden = true; }, 2200);
+  }
+
+  function digitsOnly(phone){
+    return (phone||'').replace(/[^\d]/g, '');
+  }
+
+  function todayStr(){
+    return new Date().toISOString().slice(0,10);
   }
 
   function parseDealValue(text){
@@ -308,13 +437,17 @@
     const byStage = {};
     STAGES.forEach(s => byStage[s.key] = 0);
     let dealSum = 0;
+    const today = todayStr();
+    let dueCount = 0;
     leads.forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
       if(l.stage === 'client') dealSum += parseDealValue(l.dealInfo);
+      if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
     const tiles = [
       {label:'Усього лідів', value: total},
       ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
+      {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
       {label:'Сума угод (оцінка)', value: dealSum ? '≈' + dealSum.toLocaleString('uk-UA') + ' тис $' : '—'},
     ];
     statsEl.innerHTML = tiles.map(t => `
@@ -325,26 +458,63 @@
     `).join('');
   }
 
+  function renderTasks(){
+    const today = todayStr();
+    const due = leads.filter(l => l.nextActionAt && l.nextActionAt <= today)
+      .sort((a,b)=> a.nextActionAt.localeCompare(b.nextActionAt));
+    if(!due.length){ taskBanner.hidden = true; return; }
+    taskBanner.hidden = false;
+    taskList.innerHTML = due.map(l => `
+      <div class="task-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
+        <span class="who">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="what">${esc(l.nextAction||'')}</span>
+        <span class="when">${esc(l.nextActionAt)}</span>
+      </div>
+    `).join('');
+  }
+
   function matchesQuery(l){
     if(!query) return true;
-    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo].join(' ').toLowerCase();
+    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo,l.nextAction].join(' ').toLowerCase();
     return hay.includes(query);
+  }
+
+  function chatLinksHtml(phone){
+    const digits = digitsOnly(phone);
+    if(!digits) return '';
+    const intl = digits.startsWith('0') ? '38' + digits : digits;
+    return `
+      <div class="card-chat">
+        <a href="https://t.me/+${intl}" target="_blank" rel="noopener" title="Написати в Telegram">✈️</a>
+        <a href="viber://chat?number=%2B${intl}" title="Написати у Viber">💜</a>
+        <a href="tel:+${intl}" title="Подзвонити">📞</a>
+      </div>
+    `;
   }
 
   function cardHtml(l){
     const snippet = l.portrait || l.notes || l.dealInfo || l.proposal || '';
     const idx = stageIndex(l.stage);
+    const today = todayStr();
+    let taskPill = '';
+    if(l.nextActionAt){
+      const cls = l.nextActionAt < today ? '' : (l.nextActionAt === today ? 'soon' : 'hidden-pill');
+      if(l.nextActionAt <= today){
+        taskPill = `<span class="task-pill ${cls}">⏰ ${esc(l.nextAction || 'завдання')} · ${esc(l.nextActionAt)}</span>`;
+      }
+    }
     return `
-      <div class="card" style="border-left-color:${STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
+      <div class="card" draggable="true" style="border-left-color:${STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
         <div class="name">${esc(l.name || '(без імені)')}</div>
         <div class="phone">${esc(l.phone || '—')}</div>
         ${snippet ? `<div class="snippet">${esc(snippet)}</div>` : ''}
+        ${taskPill}
         <div class="badges">
           ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
           ${l.diagnosis ? `<span class="badge outline">${esc(l.diagnosis)}</span>` : ''}
         </div>
         <div class="card-foot">
-          <span></span>
+          ${chatLinksHtml(l.phone)}
           <div class="stepper">
             <button data-move="prev" data-id="${esc(l.id)}" ${idx<=0?'disabled':''} title="Назад по воронці">‹</button>
             <button data-move="next" data-id="${esc(l.id)}" ${idx>=STAGES.length-1?'disabled':''} title="Вперед по воронці">›</button>
@@ -359,22 +529,54 @@
     boardEl.innerHTML = STAGES.map(stage => {
       const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
       return `
-        <div class="column">
+        <div class="column" data-stage="${stage.key}">
           <div class="column-head">
             <span class="title"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stage.color}"></span>${esc(stage.label)}</span>
             <span class="count">${items.length}</span>
           </div>
-          <div class="column-body">
+          <div class="column-body" data-stage="${stage.key}">
             ${items.length ? items.map(cardHtml).join('') : `<div class="column-empty">Немає лідів</div>`}
           </div>
         </div>
       `;
     }).join('');
+    wireDragAndDrop();
   }
 
   function render(){
     renderStats();
+    renderTasks();
     renderBoard();
+  }
+
+  function fillScriptSelect(){
+    const sel = document.getElementById('sendScriptSelect');
+    sel.innerHTML = '<option value="">— обрати скрипт —</option>' +
+      scripts.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('');
+  }
+
+  function renderQuickActions(lead){
+    const box = document.getElementById('quickActions');
+    if(!lead || !lead.phone){ box.innerHTML = ''; return; }
+    const digits = digitsOnly(lead.phone);
+    if(!digits){ box.innerHTML = ''; return; }
+    const intl = digits.startsWith('0') ? '38' + digits : digits;
+    box.innerHTML = `
+      <a href="tel:+${intl}">📞 Подзвонити</a>
+      <a href="https://t.me/+${intl}" target="_blank" rel="noopener">✈️ Telegram</a>
+      <a href="viber://chat?number=%2B${intl}">💜 Viber</a>
+      <a href="https://wa.me/${intl}" target="_blank" rel="noopener">🟢 WhatsApp</a>
+      <button type="button" id="copyPhoneBtn">📋 Копіювати номер</button>
+    `;
+    document.getElementById('copyPhoneBtn').addEventListener('click', ()=> copyText(lead.phone));
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>toast('Скопійовано')).catch(()=>toast('Не вдалося скопіювати'));
+    }else{
+      toast('Копіювання недоступне в цьому вікні');
+    }
   }
 
   function openDrawer(lead){
@@ -390,8 +592,14 @@
     document.getElementById('f-decision').value = lead?.decision || '';
     document.getElementById('f-proposal').value = lead?.proposal || '';
     document.getElementById('f-deal').value = lead?.dealInfo || '';
+    document.getElementById('f-next').value = lead?.nextAction || '';
+    document.getElementById('f-next-date').value = lead?.nextActionAt || '';
     document.getElementById('f-notes').value = lead?.notes || '';
+    document.getElementById('quickNote').value = '';
     document.getElementById('deleteLeadBtn').hidden = !lead;
+    document.getElementById('sendBox').hidden = !lead;
+    document.getElementById('sendText').value = '';
+    renderQuickActions(lead);
     drawer.hidden = false;
     scrim.hidden = false;
     document.getElementById('f-name').focus();
@@ -400,8 +608,8 @@
     drawer.hidden = true; scrim.hidden = true; editingId = null;
   }
 
-  async function saveLead(){
-    const data = {
+  function currentFormData(){
+    return {
       name: document.getElementById('f-name').value.trim(),
       phone: document.getElementById('f-phone').value.trim(),
       stage: document.getElementById('f-stage').value,
@@ -412,11 +620,17 @@
       decision: document.getElementById('f-decision').value.trim(),
       proposal: document.getElementById('f-proposal').value.trim(),
       dealInfo: document.getElementById('f-deal').value.trim(),
+      nextAction: document.getElementById('f-next').value.trim(),
+      nextActionAt: document.getElementById('f-next-date').value,
       notes: document.getElementById('f-notes').value.trim(),
-      updatedAt: Date.now(),
     };
+  }
+
+  async function saveLead(){
+    const data = currentFormData();
+    data.updatedAt = Date.now();
     if(!data.name && !data.phone){ closeDrawer(); return; }
-    if(!dbCol){
+    if(!leadsCol){
       if(editingId){
         const i = leads.findIndex(l=>l.id===editingId);
         if(i>-1) leads[i] = {...leads[i], ...data};
@@ -432,37 +646,81 @@
     }
     try{
       if(editingId){
-        await dbCol.doc(editingId).update(data);
+        await leadsCol.doc(editingId).update(data);
       } else {
         data.order = leads.length;
         data.createdAt = Date.now();
-        await dbCol.add(data);
+        await leadsCol.add(data);
       }
-    }catch(e){ console.error(e); }
+      toast('Збережено');
+    }catch(e){ console.error(e); toast('Помилка збереження'); }
     closeDrawer();
+  }
+
+  async function addQuickNote(){
+    const text = document.getElementById('quickNote').value.trim();
+    if(!text) return;
+    const stamp = new Date().toLocaleDateString('uk-UA', {day:'2-digit', month:'2-digit'});
+    const notesEl = document.getElementById('f-notes');
+    notesEl.value = (notesEl.value ? notesEl.value + '\n' : '') + `${stamp} — ${text}`;
+    document.getElementById('quickNote').value = '';
+    if(editingId){
+      try{
+        if(leadsCol) await leadsCol.doc(editingId).update({notes: notesEl.value, updatedAt: Date.now()});
+        const i = leads.findIndex(l=>l.id===editingId);
+        if(i>-1) leads[i].notes = notesEl.value;
+        toast('Нотатку додано');
+      }catch(e){ console.error(e); }
+    }
   }
 
   async function deleteLead(){
     if(!editingId) return closeDrawer();
-    if(!dbCol){
+    if(!leadsCol){
       leads = leads.filter(l=>l.id!==editingId);
       render(); closeDrawer(); return;
     }
-    try{ await dbCol.doc(editingId).delete(); }catch(e){ console.error(e); }
+    try{ await leadsCol.doc(editingId).delete(); }catch(e){ console.error(e); }
     closeDrawer();
   }
 
-  async function moveStage(id, dir){
+  async function setStage(id, newStage){
+    const l = leads.find(x=>x.id===id);
+    if(!l || l.stage === newStage) return;
+    if(!leadsCol){
+      l.stage = newStage; render(); return;
+    }
+    try{ await leadsCol.doc(id).update({stage:newStage, updatedAt:Date.now()}); }
+    catch(e){ console.error(e); }
+  }
+
+  function moveStage(id, dir){
     const l = leads.find(x=>x.id===id);
     if(!l) return;
     const idx = stageIndex(l.stage);
     const next = dir==='next' ? Math.min(idx+1, STAGES.length-1) : Math.max(idx-1,0);
-    if(next===idx) return;
-    const newStage = STAGES[next].key;
-    if(!dbCol){
-      l.stage = newStage; render(); return;
-    }
-    try{ await dbCol.doc(id).update({stage:newStage, updatedAt:Date.now()}); }catch(e){ console.error(e); }
+    if(next!==idx) setStage(id, STAGES[next].key);
+  }
+
+  function wireDragAndDrop(){
+    boardEl.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+    boardEl.querySelectorAll('.column').forEach(col => {
+      col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain');
+        if(id) setStage(id, col.dataset.stage);
+      });
+    });
   }
 
   boardEl.addEventListener('click', (e) => {
@@ -472,20 +730,100 @@
       moveStage(moveBtn.dataset.id, moveBtn.dataset.move);
       return;
     }
+    if(e.target.closest('.card-chat')) return;
     const card = e.target.closest('.card');
     if(card){
       const lead = leads.find(l=>l.id===card.dataset.id);
       if(lead) openDrawer(lead);
     }
   });
+  taskList.addEventListener('click', (e) => {
+    const row = e.target.closest('.task-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+  });
 
   document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
   document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
-  document.getElementById('scrim').addEventListener('click', closeDrawer);
   document.getElementById('saveLeadBtn').addEventListener('click', saveLead);
   document.getElementById('deleteLeadBtn').addEventListener('click', deleteLead);
+  document.getElementById('addNoteBtn').addEventListener('click', addQuickNote);
+  document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
+    const s = scripts.find(s=>String(s.id)===e.target.value);
+    if(s) document.getElementById('sendText').value = s.text;
+  });
+  document.getElementById('copyTextBtn').addEventListener('click', ()=>{
+    const t = document.getElementById('sendText').value.trim();
+    if(t) copyText(t);
+  });
   searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !drawer.hidden) closeDrawer(); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
+  });
+
+  // ---- scripts panel ----
+  function renderScriptsList(){
+    document.getElementById('scriptsList').innerHTML = scripts.map(s => `
+      <div class="script-item" data-id="${esc(s.id)}">
+        <div class="title">${esc(s.title)}</div>
+        <div class="text">${esc(s.text)}</div>
+        <div class="row">
+          <button class="btn small" data-copy="${esc(s.id)}">Копіювати</button>
+          <button class="btn small" data-edit="${esc(s.id)}">Редагувати</button>
+          <button class="btn small danger" data-del="${esc(s.id)}">Видалити</button>
+        </div>
+      </div>
+    `).join('') || '<div class="column-empty">Ще немає скриптів — додайте перший вище</div>';
+    fillScriptSelect();
+  }
+
+  document.getElementById('scriptsBtn').addEventListener('click', ()=>{
+    scriptsDrawer.hidden = false; scrim.hidden = false;
+  });
+  document.getElementById('closeScripts').addEventListener('click', ()=>{
+    scriptsDrawer.hidden = true; scrim.hidden = true;
+  });
+  document.getElementById('scrim').addEventListener('click', ()=>{
+    closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true;
+  });
+  document.getElementById('addScriptBtn').addEventListener('click', async ()=>{
+    const title = document.getElementById('ns-title').value.trim();
+    const text = document.getElementById('ns-text').value.trim();
+    if(!title || !text) return;
+    document.getElementById('ns-title').value = '';
+    document.getElementById('ns-text').value = '';
+    if(!scriptsCol){
+      scripts.push({id:'local-'+Date.now(), title, text});
+      renderScriptsList();
+      return;
+    }
+    try{ await scriptsCol.add({title, text, createdAt: Date.now()}); }
+    catch(e){ console.error(e); }
+  });
+  document.getElementById('scriptsList').addEventListener('click', async (e)=>{
+    const copyId = e.target.closest('[data-copy]')?.dataset.copy;
+    const delId = e.target.closest('[data-del]')?.dataset.del;
+    const editId = e.target.closest('[data-edit]')?.dataset.edit;
+    if(copyId){
+      const s = scripts.find(s=>String(s.id)===copyId);
+      if(s) copyText(s.text);
+      return;
+    }
+    if(delId){
+      if(!scriptsCol){ scripts = scripts.filter(s=>String(s.id)!==delId); renderScriptsList(); return; }
+      try{ await scriptsCol.doc(delId).delete(); }catch(e){ console.error(e); }
+      return;
+    }
+    if(editId){
+      const s = scripts.find(s=>String(s.id)===editId);
+      if(!s) return;
+      const newTitle = window.prompt('Назва:', s.title);
+      if(newTitle===null) return;
+      const newText = window.prompt('Текст:', s.text);
+      if(newText===null) return;
+      if(!scriptsCol){ s.title=newTitle; s.text=newText; renderScriptsList(); return; }
+      try{ await scriptsCol.doc(editId).update({title:newTitle, text:newText}); }catch(e){ console.error(e); }
+    }
+  });
 
   render();
 
@@ -501,8 +839,9 @@
       bannerEl.textContent = 'Немає доступу до сховища — зміни не будуть збережені.';
       return;
     }
-    dbCol = db.collection('leads');
-    dbCol.onSnapshot(
+    leadsCol = db.collection('leads');
+    scriptsCol = db.collection('scripts');
+    leadsCol.onSnapshot(
       (snap) => {
         leads = snap.docs.map(d => ({id:d.id, ...d.data()}));
         render();
@@ -512,6 +851,13 @@
         bannerEl.hidden = false;
         bannerEl.textContent = 'Помилка синхронізації: ' + (err.message||err.code||'');
       }
+    );
+    scriptsCol.onSnapshot(
+      (snap) => {
+        scripts = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        renderScriptsList();
+      },
+      (err) => console.error(err)
     );
   }
   boot();
