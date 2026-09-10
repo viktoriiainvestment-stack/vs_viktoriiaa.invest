@@ -1,0 +1,519 @@
+<title>Лійка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#F7F2E7;
+    --surface:#FFFFFF;
+    --surface-soft:#F1EADA;
+    --ink:#241C11;
+    --ink-soft:#7A7061;
+    --ink-faint:#A79C89;
+    --line:#E6DCC6;
+    --accent:#DB9A34;
+    --accent-ink:#382508;
+    --accent-soft:#F3DDAF;
+    --danger:#B34A3E;
+    --stage-cold:#8B8371;
+    --stage-qualification:#B97D3A;
+    --stage-qualified:#3F7D5C;
+    --stage-investor:#8A4F9E;
+    --stage-client:#2F6FA8;
+    --shadow: 0 1px 2px rgba(36,28,17,.06), 0 8px 24px -12px rgba(36,28,17,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1712;
+      --surface:#242019;
+      --surface-soft:#2C271E;
+      --ink:#F3ECDC;
+      --ink-soft:#B3A791;
+      --ink-faint:#7C7261;
+      --line:#3C352A;
+      --accent:#E8A94A;
+      --accent-ink:#241804;
+      --accent-soft:#4A3A1C;
+      --danger:#E08476;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1712;
+    --surface:#242019;
+    --surface-soft:#2C271E;
+    --ink:#F3ECDC;
+    --ink-soft:#B3A791;
+    --ink-faint:#7C7261;
+    --line:#3C352A;
+    --accent:#E8A94A;
+    --accent-ink:#241804;
+    --accent-soft:#4A3A1C;
+    --danger:#E08476;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    padding:0 clamp(16px,3vw,32px);
+    padding-block:20px 40px;
+  }
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif; text-wrap:balance; margin:0;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  .app{max-width:1400px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
+
+  .topbar{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .brand{display:flex; flex-direction:column; gap:2px;}
+  .brand h1{font-size:clamp(24px,3vw,32px); font-weight:600; letter-spacing:-.01em;}
+  .brand p{margin:0; color:var(--ink-soft); font-size:13.5px;}
+  .brand .mark{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:9px; background:var(--accent);
+    color:var(--accent-ink); font-family:'Fraunces',serif; font-weight:700; font-size:15px;
+    margin-right:8px; vertical-align:-6px;
+  }
+  .topbar-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .search{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:8px 12px; min-width:220px;
+  }
+  .search input{
+    border:none; outline:none; background:transparent; color:var(--ink);
+    font-size:14px; width:100%;
+  }
+  .search input::placeholder{color:var(--ink-faint);}
+  .search svg{flex:none; color:var(--ink-faint);}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    padding:9px 14px; border-radius:10px; font-size:14px; font-weight:600;
+    cursor:pointer; white-space:nowrap;
+  }
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .btn.ghost{background:transparent;}
+  .btn.danger{color:var(--danger); border-color:var(--danger);}
+  .btn.small{padding:5px 9px; font-size:12.5px; border-radius:8px;}
+
+  .stats{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;
+  }
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow);
+  }
+  .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600;}
+  .stat .value{font-family:'Fraunces',serif; font-size:24px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .stat .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+
+  .board{
+    display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;
+    scroll-snap-type:x proximity;
+  }
+  .column{
+    flex:0 0 288px; scroll-snap-align:start;
+    background:var(--surface-soft); border:1px solid var(--line); border-radius:14px;
+    display:flex; flex-direction:column; max-height:calc(100vh - 210px); min-height:220px;
+  }
+  .column-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:12px 12px 10px; border-bottom:1px solid var(--line);
+  }
+  .column-head .title{display:flex; align-items:center; gap:8px; font-weight:600; font-size:13.5px;}
+  .column-head .count{
+    font-size:11.5px; color:var(--ink-soft); background:var(--surface);
+    border:1px solid var(--line); border-radius:999px; padding:1px 8px; font-variant-numeric:tabular-nums;
+  }
+  .column-body{padding:10px; display:flex; flex-direction:column; gap:8px; overflow-y:auto;}
+  .column-empty{
+    color:var(--ink-faint); font-size:12.5px; text-align:center; padding:18px 8px;
+    border:1px dashed var(--line); border-radius:10px;
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-left-width:3px;
+    border-radius:11px; padding:10px 11px; cursor:pointer; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .card:hover{border-color:var(--accent);}
+  .card .name{font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; line-height:1.25;}
+  .card .phone{font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .card .snippet{font-size:12.5px; color:var(--ink-soft); line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .badges{display:flex; gap:5px; flex-wrap:wrap;}
+  .badge{
+    font-size:11px; font-weight:600; padding:2px 7px; border-radius:999px;
+    background:var(--accent-soft); color:var(--accent-ink);
+  }
+  .badge.outline{background:transparent; border:1px solid var(--line); color:var(--ink-soft);}
+  .card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:2px;}
+  .stepper{display:flex; gap:4px;}
+  .stepper button{
+    width:22px; height:22px; border-radius:6px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px;
+  }
+  .stepper button:hover{color:var(--ink); border-color:var(--accent);}
+  .stepper button:disabled{opacity:.3; cursor:default;}
+  .stepper button:disabled:hover{color:var(--ink-soft); border-color:var(--line);}
+
+  .scrim{position:fixed; inset:0; background:rgba(20,15,6,.32); z-index:20;}
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:min(440px,100%);
+    background:var(--surface); border-left:1px solid var(--line); z-index:21;
+    display:flex; flex-direction:column; box-shadow:-16px 0 40px -20px rgba(0,0,0,.35);
+  }
+  .drawer-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:16px 18px; border-bottom:1px solid var(--line);
+  }
+  .drawer-head h2{font-size:18px; font-weight:600;}
+  .drawer-body{padding:16px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:1;}
+  .drawer-foot{padding:14px 18px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:8px;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
+  .field input, .field select, .field textarea{
+    border:1px solid var(--line); border-radius:9px; padding:9px 10px; font-size:14px;
+    background:var(--bg); color:var(--ink); font-family:inherit; resize:vertical;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .close-x{
+    border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
+    width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .close-x:hover{background:var(--surface-soft); color:var(--ink);}
+
+  .banner{
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:10px 14px; font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;
+  }
+  [hidden]{display:none!important;}
+
+  @media (max-width:640px){
+    .column{flex-basis:82vw;}
+    .field-row{grid-template-columns:1fr;}
+  }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1><span class="mark">Л</span>Лійка</h1>
+      <p>Воронка лідів · інвестиційна нерухомість</p>
+    </div>
+    <div class="topbar-actions">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
+      </div>
+      <button class="btn primary" id="addLeadBtn">+ Новий лід</button>
+    </div>
+  </header>
+
+  <div id="dbBanner" class="banner" hidden></div>
+
+  <section class="stats" id="stats"></section>
+
+  <main class="board" id="board"></main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-head">
+    <h2 id="drawerTitle">Новий лід</h2>
+    <button class="close-x" id="closeDrawer" aria-label="Закрити">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field-row">
+      <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
+      <div class="field"><label for="f-phone">Телефон / контакт</label><input id="f-phone" type="text" placeholder="+380…"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="f-stage">Стадія</label>
+        <select id="f-stage">
+          <option value="cold">Холодна база</option>
+          <option value="qualification">Кваліфікація</option>
+          <option value="qualified">Якісний лід</option>
+          <option value="investor">Інвестор · Оффер</option>
+          <option value="client">Клієнт</option>
+        </select>
+      </div>
+      <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
+    </div>
+    <div class="field"><label for="f-prev">Попередній контакт</label><input id="f-prev" type="text" placeholder="Дата / нотатка"></div>
+    <div class="field"><label for="f-portrait">Портрет клієнта</label><textarea id="f-portrait" rows="3" placeholder="Хто це, що цікавить, бюджет…"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label for="f-diagnosis">Діагностика</label><input id="f-diagnosis" type="text" placeholder="ОФФЕР, заперечення, пауза…"></div>
+      <div class="field"><label for="f-decision">Рішення</label><input id="f-decision" type="text" placeholder="Угода, відмова…"></div>
+    </div>
+    <div class="field"><label for="f-proposal">Пропозиція / заперечення</label><textarea id="f-proposal" rows="2"></textarea></div>
+    <div class="field"><label for="f-deal">Деталі угоди</label><textarea id="f-deal" rows="2" placeholder="Сума, юніт, умови…"></textarea></div>
+    <div class="field"><label for="f-notes">Нотатки / історія</label><textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea></div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn danger" id="deleteLeadBtn">Видалити</button>
+    <button class="btn primary" id="saveLeadBtn">Зберегти</button>
+  </div>
+</aside>
+
+<script>
+(function(){
+  const STAGES = [
+    {key:'cold', label:'Холодна база', color:'var(--stage-cold)'},
+    {key:'qualification', label:'Кваліфікація', color:'var(--stage-qualification)'},
+    {key:'qualified', label:'Якісний лід', color:'var(--stage-qualified)'},
+    {key:'investor', label:'Інвестор · Оффер', color:'var(--stage-investor)'},
+    {key:'client', label:'Клієнт', color:'var(--stage-client)'},
+  ];
+  const stageIndex = k => STAGES.findIndex(s=>s.key===k);
+
+  const boardEl = document.getElementById('board');
+  const statsEl = document.getElementById('stats');
+  const searchEl = document.getElementById('search');
+  const bannerEl = document.getElementById('dbBanner');
+  const drawer = document.getElementById('drawer');
+  const scrim = document.getElementById('scrim');
+
+  let leads = [];
+  let dbCol = null;
+  let editingId = null;
+  let query = '';
+
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function parseDealValue(text){
+    if(!text) return 0;
+    let sum = 0;
+    const re = /(\d+(?:[.,]\d+)?)\s*(к\$|тис\$|k\$)/gi;
+    let m;
+    while((m = re.exec(text))){
+      sum += parseFloat(m[1].replace(',', '.'));
+    }
+    return sum;
+  }
+
+  function renderStats(){
+    const total = leads.length;
+    const byStage = {};
+    STAGES.forEach(s => byStage[s.key] = 0);
+    let dealSum = 0;
+    leads.forEach(l => {
+      byStage[l.stage] = (byStage[l.stage]||0) + 1;
+      if(l.stage === 'client') dealSum += parseDealValue(l.dealInfo);
+    });
+    const tiles = [
+      {label:'Усього лідів', value: total},
+      ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
+      {label:'Сума угод (оцінка)', value: dealSum ? '≈' + dealSum.toLocaleString('uk-UA') + ' тис $' : '—'},
+    ];
+    statsEl.innerHTML = tiles.map(t => `
+      <div class="stat">
+        <span class="label">${t.color ? `<span class="dot" style="background:${t.color}"></span>`:''}${esc(t.label)}</span>
+        <span class="value">${esc(t.value)}</span>
+      </div>
+    `).join('');
+  }
+
+  function matchesQuery(l){
+    if(!query) return true;
+    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo].join(' ').toLowerCase();
+    return hay.includes(query);
+  }
+
+  function cardHtml(l){
+    const snippet = l.portrait || l.notes || l.dealInfo || l.proposal || '';
+    const idx = stageIndex(l.stage);
+    return `
+      <div class="card" style="border-left-color:${STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
+        <div class="name">${esc(l.name || '(без імені)')}</div>
+        <div class="phone">${esc(l.phone || '—')}</div>
+        ${snippet ? `<div class="snippet">${esc(snippet)}</div>` : ''}
+        <div class="badges">
+          ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
+          ${l.diagnosis ? `<span class="badge outline">${esc(l.diagnosis)}</span>` : ''}
+        </div>
+        <div class="card-foot">
+          <span></span>
+          <div class="stepper">
+            <button data-move="prev" data-id="${esc(l.id)}" ${idx<=0?'disabled':''} title="Назад по воронці">‹</button>
+            <button data-move="next" data-id="${esc(l.id)}" ${idx>=STAGES.length-1?'disabled':''} title="Вперед по воронці">›</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBoard(){
+    const filtered = leads.filter(matchesQuery);
+    boardEl.innerHTML = STAGES.map(stage => {
+      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
+      return `
+        <div class="column">
+          <div class="column-head">
+            <span class="title"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stage.color}"></span>${esc(stage.label)}</span>
+            <span class="count">${items.length}</span>
+          </div>
+          <div class="column-body">
+            ${items.length ? items.map(cardHtml).join('') : `<div class="column-empty">Немає лідів</div>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function render(){
+    renderStats();
+    renderBoard();
+  }
+
+  function openDrawer(lead){
+    editingId = lead ? lead.id : null;
+    document.getElementById('drawerTitle').textContent = lead ? 'Картка ліда' : 'Новий лід';
+    document.getElementById('f-name').value = lead?.name || '';
+    document.getElementById('f-phone').value = lead?.phone || '';
+    document.getElementById('f-stage').value = lead?.stage || 'cold';
+    document.getElementById('f-offer').value = lead?.offer || '';
+    document.getElementById('f-prev').value = lead?.prevContact || '';
+    document.getElementById('f-portrait').value = lead?.portrait || '';
+    document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
+    document.getElementById('f-decision').value = lead?.decision || '';
+    document.getElementById('f-proposal').value = lead?.proposal || '';
+    document.getElementById('f-deal').value = lead?.dealInfo || '';
+    document.getElementById('f-notes').value = lead?.notes || '';
+    document.getElementById('deleteLeadBtn').hidden = !lead;
+    drawer.hidden = false;
+    scrim.hidden = false;
+    document.getElementById('f-name').focus();
+  }
+  function closeDrawer(){
+    drawer.hidden = true; scrim.hidden = true; editingId = null;
+  }
+
+  async function saveLead(){
+    const data = {
+      name: document.getElementById('f-name').value.trim(),
+      phone: document.getElementById('f-phone').value.trim(),
+      stage: document.getElementById('f-stage').value,
+      offer: document.getElementById('f-offer').value.trim(),
+      prevContact: document.getElementById('f-prev').value.trim(),
+      portrait: document.getElementById('f-portrait').value.trim(),
+      diagnosis: document.getElementById('f-diagnosis').value.trim(),
+      decision: document.getElementById('f-decision').value.trim(),
+      proposal: document.getElementById('f-proposal').value.trim(),
+      dealInfo: document.getElementById('f-deal').value.trim(),
+      notes: document.getElementById('f-notes').value.trim(),
+      updatedAt: Date.now(),
+    };
+    if(!data.name && !data.phone){ closeDrawer(); return; }
+    if(!dbCol){
+      if(editingId){
+        const i = leads.findIndex(l=>l.id===editingId);
+        if(i>-1) leads[i] = {...leads[i], ...data};
+      } else {
+        data.id = 'local-' + Date.now();
+        data.order = leads.length;
+        data.createdAt = Date.now();
+        leads.push(data);
+      }
+      render();
+      closeDrawer();
+      return;
+    }
+    try{
+      if(editingId){
+        await dbCol.doc(editingId).update(data);
+      } else {
+        data.order = leads.length;
+        data.createdAt = Date.now();
+        await dbCol.add(data);
+      }
+    }catch(e){ console.error(e); }
+    closeDrawer();
+  }
+
+  async function deleteLead(){
+    if(!editingId) return closeDrawer();
+    if(!dbCol){
+      leads = leads.filter(l=>l.id!==editingId);
+      render(); closeDrawer(); return;
+    }
+    try{ await dbCol.doc(editingId).delete(); }catch(e){ console.error(e); }
+    closeDrawer();
+  }
+
+  async function moveStage(id, dir){
+    const l = leads.find(x=>x.id===id);
+    if(!l) return;
+    const idx = stageIndex(l.stage);
+    const next = dir==='next' ? Math.min(idx+1, STAGES.length-1) : Math.max(idx-1,0);
+    if(next===idx) return;
+    const newStage = STAGES[next].key;
+    if(!dbCol){
+      l.stage = newStage; render(); return;
+    }
+    try{ await dbCol.doc(id).update({stage:newStage, updatedAt:Date.now()}); }catch(e){ console.error(e); }
+  }
+
+  boardEl.addEventListener('click', (e) => {
+    const moveBtn = e.target.closest('[data-move]');
+    if(moveBtn){
+      e.stopPropagation();
+      moveStage(moveBtn.dataset.id, moveBtn.dataset.move);
+      return;
+    }
+    const card = e.target.closest('.card');
+    if(card){
+      const lead = leads.find(l=>l.id===card.dataset.id);
+      if(lead) openDrawer(lead);
+    }
+  });
+
+  document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
+  document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+  document.getElementById('scrim').addEventListener('click', closeDrawer);
+  document.getElementById('saveLeadBtn').addEventListener('click', saveLead);
+  document.getElementById('deleteLeadBtn').addEventListener('click', deleteLead);
+  searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !drawer.hidden) closeDrawer(); });
+
+  render();
+
+  async function boot(){
+    if(!window.claude || !window.claude.use){
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'Дані не синхронізуються: сторінка відкрита поза Claude.';
+      return;
+    }
+    const db = await window.claude.use('db');
+    if(!db){
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'Немає доступу до сховища — зміни не будуть збережені.';
+      return;
+    }
+    dbCol = db.collection('leads');
+    dbCol.onSnapshot(
+      (snap) => {
+        leads = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        render();
+      },
+      (err) => {
+        console.error(err);
+        bannerEl.hidden = false;
+        bannerEl.textContent = 'Помилка синхронізації: ' + (err.message||err.code||'');
+      }
+    );
+  }
+  boot();
+})();
+</script>
