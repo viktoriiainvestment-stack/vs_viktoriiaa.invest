@@ -1,2 +1,5 @@
 pyTelegramBotAPI
 anthropic
+Flask
+requests
+gunicorn

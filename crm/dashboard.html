@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лійка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#F7F2E7; --surface:#FFFFFF; --surface-soft:#F1EADA;
+    --ink:#241C11; --ink-soft:#7A7061; --ink-faint:#A79C89; --line:#E6DCC6;
+    --accent:#DB9A34; --accent-ink:#382508; --accent-soft:#F3DDAF; --danger:#B34A3E;
+    --stage-cold:#8B8371; --stage-qualification:#B97D3A; --stage-qualified:#3F7D5C;
+    --stage-investor:#8A4F9E; --stage-client:#2F6FA8;
+    --shadow: 0 1px 2px rgba(36,28,17,.06), 0 8px 24px -12px rgba(36,28,17,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1712; --surface:#242019; --surface-soft:#2C271E;
+      --ink:#F3ECDC; --ink-soft:#B3A791; --ink-faint:#7C7261; --line:#3C352A;
+      --accent:#E8A94A; --accent-ink:#241804; --accent-soft:#4A3A1C; --danger:#E08476;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1712; --surface:#242019; --surface-soft:#2C271E;
+    --ink:#F3ECDC; --ink-soft:#B3A791; --ink-faint:#7C7261; --line:#3C352A;
+    --accent:#E8A94A; --accent-ink:#241804; --accent-soft:#4A3A1C; --danger:#E08476;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,-apple-system,sans-serif;
+    padding:0 clamp(16px,3vw,32px); padding-block:20px 40px; margin:0;}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif; margin:0;}
+  button{font-family:inherit;}
+  .app{max-width:1400px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
+  .topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+  .brand{display:flex; flex-direction:column; gap:2px;}
+  .brand h1{font-size:clamp(24px,3vw,32px); font-weight:600;}
+  .brand p{margin:0; color:var(--ink-soft); font-size:13.5px;}
+  .brand .mark{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+    border-radius:9px; background:var(--accent); color:var(--accent-ink); font-family:'Fraunces',serif;
+    font-weight:700; font-size:15px; margin-right:8px; vertical-align:-6px;}
+  .topbar-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .search{display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:8px 12px; min-width:220px;}
+  .search input{border:none; outline:none; background:transparent; color:var(--ink); font-size:14px; width:100%;}
+  .search input::placeholder{color:var(--ink-faint);}
+  .search svg{flex:none; color:var(--ink-faint);}
+  .btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink); padding:9px 14px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
+  .btn.danger{color:var(--danger); border-color:var(--danger);}
+  .btn.small{padding:5px 9px; font-size:12.5px; border-radius:8px;}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;}
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow);}
+  .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600;}
+  .stat .value{font-family:'Fraunces',serif; font-size:24px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+  .board{display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;}
+  .column{flex:0 0 288px; background:var(--surface-soft); border:1px solid var(--line); border-radius:14px;
+    display:flex; flex-direction:column; max-height:calc(100vh - 210px); min-height:220px;}
+  .column-head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 10px;
+    border-bottom:1px solid var(--line);}
+  .column-head .title{display:flex; align-items:center; gap:8px; font-weight:600; font-size:13.5px;}
+  .column-head .count{font-size:11.5px; color:var(--ink-soft); background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:1px 8px; font-variant-numeric:tabular-nums;}
+  .column-body{padding:10px; display:flex; flex-direction:column; gap:8px; overflow-y:auto;}
+  .column-empty{color:var(--ink-faint); font-size:12.5px; text-align:center; padding:18px 8px;
+    border:1px dashed var(--line); border-radius:10px;}
+  .card{background:var(--surface); border:1px solid var(--line); border-left-width:3px; border-radius:11px;
+    padding:10px 11px; cursor:pointer; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;}
+  .card:hover{border-color:var(--accent);}
+  .card .name{font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; line-height:1.25;}
+  .card .phone{font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .card .snippet{font-size:12.5px; color:var(--ink-soft); line-height:1.4; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .badges{display:flex; gap:5px; flex-wrap:wrap;}
+  .badge{font-size:11px; font-weight:600; padding:2px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent-ink);}
+  .badge.outline{background:transparent; border:1px solid var(--line); color:var(--ink-soft);}
+  .badge.channel{background:transparent; border:1px solid var(--stage-qualified); color:var(--stage-qualified);}
+  .card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:2px;}
+  .stepper{display:flex; gap:4px;}
+  .stepper button{width:22px; height:22px; border-radius:6px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px;}
+  .stepper button:hover{color:var(--ink); border-color:var(--accent);}
+  .stepper button:disabled{opacity:.3; cursor:default;}
+  .task-banner{background:var(--accent-soft); border:1px solid var(--accent); border-radius:12px; padding:12px 14px;}
+  .task-banner h3{font-size:14px; font-weight:600; margin-bottom:8px;}
+  .task-row{display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:13px; cursor:pointer;
+    border-top:1px solid rgba(0,0,0,.06);}
+  .task-row:first-of-type{border-top:none;}
+  .task-row .who{font-weight:600;}
+  .task-row .when{color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .scrim{position:fixed; inset:0; background:rgba(20,15,6,.32); z-index:20;}
+  .drawer{position:fixed; top:0; right:0; height:100%; width:min(440px,100%); background:var(--surface);
+    border-left:1px solid var(--line); z-index:21; display:flex; flex-direction:column;
+    box-shadow:-16px 0 40px -20px rgba(0,0,0,.35);}
+  .drawer-head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:16px 18px;
+    border-bottom:1px solid var(--line);}
+  .drawer-head h2{font-size:18px; font-weight:600;}
+  .drawer-body{padding:16px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:1;}
+  .drawer-foot{padding:14px 18px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:8px;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
+  .field input, .field select, .field textarea{border:1px solid var(--line); border-radius:9px; padding:9px 10px;
+    font-size:14px; background:var(--bg); color:var(--ink); font-family:inherit; resize:vertical;}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .close-x{border:none; background:transparent; color:var(--ink-soft); cursor:pointer; width:30px; height:30px;
+    border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;}
+  .close-x:hover{background:var(--surface-soft); color:var(--ink);}
+  .send-box{border:1px solid var(--line); border-radius:11px; padding:12px; display:flex; flex-direction:column; gap:8px; background:var(--surface-soft);}
+  .send-box h3{font-size:13px; font-weight:600;}
+  .send-box .muted{font-size:12.5px; color:var(--ink-soft);}
+  .script-item{border:1px solid var(--line); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; background:var(--surface);}
+  .script-item .title{font-weight:600; font-size:13.5px;}
+  .script-item .text{font-size:12.5px; color:var(--ink-soft); white-space:pre-wrap;}
+  .script-item .row{display:flex; gap:6px; justify-content:flex-end;}
+  .banner{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px;
+    font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;}
+  [hidden]{display:none!important;}
+  @media (max-width:640px){ .column{flex-basis:82vw;} .field-row{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1><span class="mark">Л</span>Лійка</h1>
+      <p>Воронка лідів · Telegram · Viber</p>
+    </div>
+    <div class="topbar-actions">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
+      </div>
+      <button class="btn" id="scriptsBtn">📜 Скрипти</button>
+      <button class="btn primary" id="addLeadBtn">+ Новий лід</button>
+    </div>
+  </header>
+
+  <div id="dbBanner" class="banner" hidden></div>
+  <div id="taskBanner" class="task-banner" hidden>
+    <h3>📋 Завдання на сьогодні й прострочені</h3>
+    <div id="taskList"></div>
+  </div>
+
+  <section class="stats" id="stats"></section>
+  <main class="board" id="board"></main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-head">
+    <h2 id="drawerTitle">Новий лід</h2>
+    <button class="close-x" id="closeDrawer" aria-label="Закрити">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field-row">
+      <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
+      <div class="field"><label for="f-phone">Телефон / контакт</label><input id="f-phone" type="text" placeholder="+380…"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="f-stage">Стадія</label>
+        <select id="f-stage">
+          <option value="cold">Холодна база</option>
+          <option value="qualification">Кваліфікація</option>
+          <option value="qualified">Якісний лід</option>
+          <option value="investor">Інвестор · Оффер</option>
+          <option value="client">Клієнт</option>
+        </select>
+      </div>
+      <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
+    </div>
+    <div class="field"><label for="f-prev">Попередній контакт</label><input id="f-prev" type="text" placeholder="Дата / нотатка"></div>
+    <div class="field"><label for="f-portrait">Портрет клієнта</label><textarea id="f-portrait" rows="3" placeholder="Хто це, що цікавить, бюджет…"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label for="f-diagnosis">Діагностика</label><input id="f-diagnosis" type="text" placeholder="ОФФЕР, заперечення, пауза…"></div>
+      <div class="field"><label for="f-decision">Рішення</label><input id="f-decision" type="text" placeholder="Угода, відмова…"></div>
+    </div>
+    <div class="field"><label for="f-proposal">Пропозиція / заперечення</label><textarea id="f-proposal" rows="2"></textarea></div>
+    <div class="field"><label for="f-deal">Деталі угоди</label><textarea id="f-deal" rows="2" placeholder="Сума, юніт, умови…"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label for="f-next">Наступний крок</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
+      <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
+    </div>
+    <div class="field"><label for="f-notes">Нотатки / історія</label><textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea></div>
+
+    <div class="send-box" id="sendBox">
+      <h3>Надіслати повідомлення</h3>
+      <div class="muted" id="sendChannelNote"></div>
+      <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
+      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
+      <button class="btn primary small" id="sendBtn" style="align-self:flex-start;">Надіслати</button>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn danger" id="deleteLeadBtn">Видалити</button>
+    <button class="btn primary" id="saveLeadBtn">Зберегти</button>
+  </div>
+</aside>
+
+<aside class="drawer" id="scriptsDrawer" hidden>
+  <div class="drawer-head">
+    <h2>Скрипти повідомлень</h2>
+    <button class="close-x" id="closeScripts" aria-label="Закрити">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="field"><label for="ns-title">Назва</label><input id="ns-title" type="text" placeholder="Наприклад: Заперечення «дорого»"></div>
+    <div class="field"><label for="ns-text">Текст</label><textarea id="ns-text" rows="4" placeholder="Готовий текст повідомлення…"></textarea></div>
+    <button class="btn primary small" id="addScriptBtn" style="align-self:flex-start;">Додати скрипт</button>
+    <div id="scriptsList" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;"></div>
+  </div>
+</aside>
+
+<script>
+(function(){
+  const STAGES = [
+    {key:'cold', label:'Холодна база', color:'var(--stage-cold)'},
+    {key:'qualification', label:'Кваліфікація', color:'var(--stage-qualification)'},
+    {key:'qualified', label:'Якісний лід', color:'var(--stage-qualified)'},
+    {key:'investor', label:'Інвестор · Оффер', color:'var(--stage-investor)'},
+    {key:'client', label:'Клієнт', color:'var(--stage-client)'},
+  ];
+  const stageIndex = k => STAGES.findIndex(s=>s.key===k);
+  const CHANNEL_LABEL = {telegram:'Telegram', viber:'Viber'};
+
+  const boardEl = document.getElementById('board');
+  const statsEl = document.getElementById('stats');
+  const searchEl = document.getElementById('search');
+  const bannerEl = document.getElementById('dbBanner');
+  const taskBanner = document.getElementById('taskBanner');
+  const taskList = document.getElementById('taskList');
+  const drawer = document.getElementById('drawer');
+  const scriptsDrawer = document.getElementById('scriptsDrawer');
+  const scrim = document.getElementById('scrim');
+
+  let leads = [];
+  let scripts = [];
+  let editingId = null;
+  let query = '';
+  let token = localStorage.getItem('liika_token') || '';
+
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function api(path, opts={}){
+    const res = await fetch(path, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        ...(opts.headers||{}),
+      },
+    });
+    if(res.status === 401){
+      token = '';
+      localStorage.removeItem('liika_token');
+      promptLogin();
+      throw new Error('unauthorized');
+    }
+    if(res.status === 204) return null;
+    const data = await res.json().catch(()=>null);
+    if(!res.ok) throw new Error((data && data.error) || res.statusText);
+    return data;
+  }
+
+  function promptLogin(){
+    const t = window.prompt('Токен адміністратора:');
+    if(t){
+      token = t.trim();
+      localStorage.setItem('liika_token', token);
+      boot();
+    }
+  }
+
+  function parseDealValue(text){
+    if(!text) return 0;
+    let sum = 0;
+    const re = /(\d+(?:[.,]\d+)?)\s*(к\$|тис\$|k\$)/gi;
+    let m;
+    while((m = re.exec(text))) sum += parseFloat(m[1].replace(',', '.'));
+    return sum;
+  }
+
+  function renderStats(){
+    const total = leads.length;
+    const byStage = {};
+    STAGES.forEach(s => byStage[s.key] = 0);
+    let dealSum = 0;
+    leads.forEach(l => {
+      byStage[l.stage] = (byStage[l.stage]||0) + 1;
+      if(l.stage === 'client') dealSum += parseDealValue(l.deal_info);
+    });
+    const tiles = [
+      {label:'Усього лідів', value: total},
+      ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
+      {label:'Сума угод (оцінка)', value: dealSum ? '≈' + dealSum.toLocaleString('uk-UA') + ' тис $' : '—'},
+    ];
+    statsEl.innerHTML = tiles.map(t => `
+      <div class="stat">
+        <span class="label">${t.color ? `<span class="dot" style="background:${t.color}"></span>`:''}${esc(t.label)}</span>
+        <span class="value">${esc(t.value)}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderTasks(){
+    const today = new Date().toISOString().slice(0,10);
+    const due = leads.filter(l => l.next_action_at && l.next_action_at <= today)
+      .sort((a,b)=> a.next_action_at.localeCompare(b.next_action_at));
+    if(!due.length){ taskBanner.hidden = true; return; }
+    taskBanner.hidden = false;
+    taskList.innerHTML = due.map(l => `
+      <div class="task-row" data-id="${esc(l.id)}">
+        <span class="who">${esc(l.name || l.phone || '(без імені)')} — ${esc(l.next_action||'')}</span>
+        <span class="when">${esc(l.next_action_at)}</span>
+      </div>
+    `).join('');
+  }
+
+  function matchesQuery(l){
+    if(!query) return true;
+    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.deal_info].join(' ').toLowerCase();
+    return hay.includes(query);
+  }
+
+  function cardHtml(l){
+    const snippet = l.portrait || l.notes || l.deal_info || l.proposal || '';
+    const idx = stageIndex(l.stage);
+    return `
+      <div class="card" style="border-left-color:${STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
+        <div class="name">${esc(l.name || '(без імені)')}</div>
+        <div class="phone">${esc(l.phone || '—')}</div>
+        ${snippet ? `<div class="snippet">${esc(snippet)}</div>` : ''}
+        <div class="badges">
+          ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
+          ${l.diagnosis ? `<span class="badge outline">${esc(l.diagnosis)}</span>` : ''}
+          ${l.source && CHANNEL_LABEL[l.source] ? `<span class="badge channel">${CHANNEL_LABEL[l.source]}</span>` : ''}
+        </div>
+        <div class="card-foot">
+          <span></span>
+          <div class="stepper">
+            <button data-move="prev" data-id="${esc(l.id)}" ${idx<=0?'disabled':''} title="Назад по воронці">‹</button>
+            <button data-move="next" data-id="${esc(l.id)}" ${idx>=STAGES.length-1?'disabled':''} title="Вперед по воронці">›</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBoard(){
+    const filtered = leads.filter(matchesQuery);
+    boardEl.innerHTML = STAGES.map(stage => {
+      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.id||0)-(b.id||0));
+      return `
+        <div class="column">
+          <div class="column-head">
+            <span class="title"><span class="dot" style="background:${stage.color}"></span>${esc(stage.label)}</span>
+            <span class="count">${items.length}</span>
+          </div>
+          <div class="column-body">
+            ${items.length ? items.map(cardHtml).join('') : `<div class="column-empty">Немає лідів</div>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function render(){ renderStats(); renderTasks(); renderBoard(); }
+
+  function fillSendScriptOptions(){
+    const sel = document.getElementById('sendScriptSelect');
+    sel.innerHTML = '<option value="">— обрати скрипт —</option>' +
+      scripts.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('');
+  }
+
+  function openDrawer(lead){
+    editingId = lead ? lead.id : null;
+    document.getElementById('drawerTitle').textContent = lead ? 'Картка ліда' : 'Новий лід';
+    document.getElementById('f-name').value = lead?.name || '';
+    document.getElementById('f-phone').value = lead?.phone || '';
+    document.getElementById('f-stage').value = lead?.stage || 'cold';
+    document.getElementById('f-offer').value = lead?.offer || '';
+    document.getElementById('f-prev').value = lead?.prev_contact || '';
+    document.getElementById('f-portrait').value = lead?.portrait || '';
+    document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
+    document.getElementById('f-decision').value = lead?.decision || '';
+    document.getElementById('f-proposal').value = lead?.proposal || '';
+    document.getElementById('f-deal').value = lead?.deal_info || '';
+    document.getElementById('f-next').value = lead?.next_action || '';
+    document.getElementById('f-next-date').value = lead?.next_action_at || '';
+    document.getElementById('f-notes').value = lead?.notes || '';
+    document.getElementById('deleteLeadBtn').hidden = !lead;
+
+    const sendBox = document.getElementById('sendBox');
+    const canSend = lead && lead.external_id && CHANNEL_LABEL[lead.source];
+    sendBox.hidden = !lead;
+    if(lead){
+      document.getElementById('sendChannelNote').textContent = canSend
+        ? `Канал: ${CHANNEL_LABEL[lead.source]}`
+        : 'Ліда додано вручну — немає каналу (Telegram/Viber) для надсилання.';
+      document.getElementById('sendScriptSelect').disabled = !canSend;
+      document.getElementById('sendText').disabled = !canSend;
+      document.getElementById('sendBtn').disabled = !canSend;
+    }
+
+    drawer.hidden = false; scrim.hidden = false;
+    document.getElementById('f-name').focus();
+  }
+  function closeDrawer(){ drawer.hidden = true; scrim.hidden = true; editingId = null; }
+
+  async function saveLead(){
+    const data = {
+      name: document.getElementById('f-name').value.trim(),
+      phone: document.getElementById('f-phone').value.trim(),
+      stage: document.getElementById('f-stage').value,
+      offer: document.getElementById('f-offer').value.trim(),
+      prev_contact: document.getElementById('f-prev').value.trim(),
+      portrait: document.getElementById('f-portrait').value.trim(),
+      diagnosis: document.getElementById('f-diagnosis').value.trim(),
+      decision: document.getElementById('f-decision').value.trim(),
+      proposal: document.getElementById('f-proposal').value.trim(),
+      deal_info: document.getElementById('f-deal').value.trim(),
+      next_action: document.getElementById('f-next').value.trim(),
+      next_action_at: document.getElementById('f-next-date').value,
+      notes: document.getElementById('f-notes').value.trim(),
+    };
+    if(!data.name && !data.phone){ closeDrawer(); return; }
+    try{
+      if(editingId) await api(`/api/leads/${editingId}`, {method:'PATCH', body: JSON.stringify(data)});
+      else await api('/api/leads', {method:'POST', body: JSON.stringify(data)});
+      await loadLeads();
+    }catch(e){ console.error(e); }
+    closeDrawer();
+  }
+
+  async function deleteLead(){
+    if(!editingId) return closeDrawer();
+    try{ await api(`/api/leads/${editingId}`, {method:'DELETE'}); await loadLeads(); }
+    catch(e){ console.error(e); }
+    closeDrawer();
+  }
+
+  async function moveStage(id, dir){
+    const l = leads.find(x=>String(x.id)===String(id));
+    if(!l) return;
+    const idx = stageIndex(l.stage);
+    const next = dir==='next' ? Math.min(idx+1, STAGES.length-1) : Math.max(idx-1,0);
+    if(next===idx) return;
+    try{ await api(`/api/leads/${id}`, {method:'PATCH', body: JSON.stringify({stage: STAGES[next].key})}); await loadLeads(); }
+    catch(e){ console.error(e); }
+  }
+
+  async function sendMessage(){
+    if(!editingId) return;
+    const text = document.getElementById('sendText').value.trim();
+    if(!text) return;
+    try{
+      await api(`/api/leads/${editingId}/send`, {method:'POST', body: JSON.stringify({text})});
+      document.getElementById('sendText').value = '';
+      await loadLeads();
+      const updated = leads.find(l=>String(l.id)===String(editingId));
+      if(updated) openDrawer(updated);
+    }catch(e){ alert('Не вдалося надіслати: ' + e.message); }
+  }
+
+  boardEl.addEventListener('click', (e) => {
+    const moveBtn = e.target.closest('[data-move]');
+    if(moveBtn){ e.stopPropagation(); moveStage(moveBtn.dataset.id, moveBtn.dataset.move); return; }
+    const card = e.target.closest('.card');
+    if(card){ const lead = leads.find(l=>String(l.id)===card.dataset.id); if(lead) openDrawer(lead); }
+  });
+  taskList.addEventListener('click', (e) => {
+    const row = e.target.closest('.task-row');
+    if(row){ const lead = leads.find(l=>String(l.id)===row.dataset.id); if(lead) openDrawer(lead); }
+  });
+
+  document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
+  document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+  document.getElementById('scrim').addEventListener('click', ()=>{ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; });
+  document.getElementById('saveLeadBtn').addEventListener('click', saveLead);
+  document.getElementById('deleteLeadBtn').addEventListener('click', deleteLead);
+  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
+    const s = scripts.find(s=>String(s.id)===e.target.value);
+    if(s) document.getElementById('sendText').value = s.text;
+  });
+  searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
+  });
+
+  // ---- scripts panel ----
+  function renderScriptsList(){
+    document.getElementById('scriptsList').innerHTML = scripts.map(s => `
+      <div class="script-item" data-id="${esc(s.id)}">
+        <div class="title">${esc(s.title)}</div>
+        <div class="text">${esc(s.text)}</div>
+        <div class="row">
+          <button class="btn small" data-edit="${esc(s.id)}">Редагувати</button>
+          <button class="btn small danger" data-del="${esc(s.id)}">Видалити</button>
+        </div>
+      </div>
+    `).join('') || '<div class="column-empty">Немає скриптів</div>';
+  }
+
+  document.getElementById('scriptsBtn').addEventListener('click', ()=>{
+    scriptsDrawer.hidden = false; scrim.hidden = false;
+  });
+  document.getElementById('closeScripts').addEventListener('click', ()=>{
+    scriptsDrawer.hidden = true; scrim.hidden = true;
+  });
+  document.getElementById('addScriptBtn').addEventListener('click', async ()=>{
+    const title = document.getElementById('ns-title').value.trim();
+    const text = document.getElementById('ns-text').value.trim();
+    if(!title || !text) return;
+    try{
+      await api('/api/scripts', {method:'POST', body: JSON.stringify({title, text})});
+      document.getElementById('ns-title').value = '';
+      document.getElementById('ns-text').value = '';
+      await loadScripts();
+    }catch(e){ console.error(e); }
+  });
+  document.getElementById('scriptsList').addEventListener('click', async (e)=>{
+    const delId = e.target.closest('[data-del]')?.dataset.del;
+    const editId = e.target.closest('[data-edit]')?.dataset.edit;
+    if(delId){
+      await api(`/api/scripts/${delId}`, {method:'DELETE'});
+      await loadScripts();
+    }else if(editId){
+      const s = scripts.find(s=>String(s.id)===editId);
+      if(!s) return;
+      const newTitle = window.prompt('Назва:', s.title);
+      if(newTitle===null) return;
+      const newText = window.prompt('Текст:', s.text);
+      if(newText===null) return;
+      await api(`/api/scripts/${editId}`, {method:'PATCH', body: JSON.stringify({title:newTitle, text:newText})});
+      await loadScripts();
+    }
+  });
+
+  async function loadLeads(){
+    leads = await api('/api/leads');
+    render();
+  }
+  async function loadScripts(){
+    scripts = await api('/api/scripts');
+    renderScriptsList();
+    fillSendScriptOptions();
+  }
+
+  async function boot(){
+    if(!token){ promptLogin(); if(!token) return; }
+    try{
+      await Promise.all([loadLeads(), loadScripts()]);
+      bannerEl.hidden = true;
+    }catch(e){
+      console.error(e);
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'Помилка з’єднання із сервером CRM.';
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
