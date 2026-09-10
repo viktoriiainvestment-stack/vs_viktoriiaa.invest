@@ -1,19 +1,23 @@
-# Лійка — автономна CRM з Telegram і Viber
+# Лійка — автономна CRM з Telegram, Viber і Facebook/Instagram Ads
 
 Повноцінний застосунок (не Claude Artifact): Flask-сервер, SQLite-база,
-CRM-бот Telegram і Viber-бот, які автоматично створюють ліди і шлють
-вам сповіщення. Живе на **вашому** хостингу, код — тут, у репозиторії.
+CRM-бот Telegram, Viber-бот і вебхук Facebook/Instagram Lead Ads — усі
+автоматично створюють ліди і шлють вам сповіщення. Живе на **вашому**
+хостингу, код — тут, у репозиторії.
 
 ## Архітектура
 
 - `db.py` — SQLite (`crm.db`), таблиці `leads` і `scripts`.
 - `app.py` — Flask: віддає дашборд (`dashboard.html`), REST API
-  (`/api/leads`, `/api/scripts`), приймає вебхуки Viber (`/viber/webhook`),
-  запускає Telegram-бота в фоновому потоці.
+  (`/api/leads`, `/api/scripts`), приймає вебхуки Viber (`/viber/webhook`)
+  і Meta Lead Ads (`/meta/webhook`), запускає Telegram-бота у фоновому потоці.
 - `telegram_bot.py` — окремий бот під ліди (не плутати з `../bot.py`,
   який генерує контент-план). Приймає контакт/повідомлення від клієнта →
   створює лід зі стадією «Холодна база» → шле вам сповіщення.
 - `viber_bot.py` — те саме через Viber (вебхук).
+- `meta_leads.py` — обробляє вебхук Facebook/Instagram Lead Ads:
+  Meta повідомляє лише `leadgen_id`, самі відповіді (ім'я, телефон,
+  email, додаткові питання) підтягуються окремим запитом до Graph API.
 - `notifications.py` — пуш вам у Telegram про нові ліди й завдання.
 - `seed.py` — одноразово наповнює базу 69 лідами з початкового файлу
   (запускається сам, тільки якщо таблиця порожня).
@@ -54,15 +58,44 @@ python app.py               # http://localhost:5000
    from viber_bot import register_webhook
    register_webhook("https://ваш-домен/viber/webhook")
    ```
+7. **Facebook/Instagram Lead Ads** — найбільше ручної роботи в Meta,
+   робиться раз:
+   1. [developers.facebook.com](https://developers.facebook.com) →
+      «Мої застосунки» → «Створити застосунок» → тип «Business».
+   2. У застосунку скопіюйте **App Secret** (Налаштування → Основні) →
+      `META_APP_SECRET`.
+   3. Придумайте будь-який рядок-пароль → `META_VERIFY_TOKEN` (Meta
+      попросить його повторити при підписці на вебхук).
+   4. Додайте продукт **Webhooks** → об'єкт **Page** → підпишіться на
+      поле `leadgen` → URL зворотного виклику:
+      `https://ваш-домен/meta/webhook`, Verify Token — той самий, що в
+      `META_VERIFY_TOKEN`.
+   5. Отримайте **Page Access Token** для сторінки, з якої йде реклама
+      (Graph API Explorer або через Business Manager → System User з
+      правами `leads_retrieval` і `pages_show_list`) → бажано зробити
+      його довгостроковим (never-expiring) через System User →
+      `META_PAGE_ACCESS_TOKEN`.
+   6. Підпишіть саму сторінку на застосунок: `POST
+      /{page-id}/subscribed_apps?subscribed_fields=leadgen` з
+      Page Access Token.
+   7. У Business Manager застосунок має пройти **App Review** на
+      дозвіл `leads_retrieval`, якщо реклама не тестова — без цього
+      вебхук працюватиме лише для сторінок, де ви адмін і застосунок у
+      Development-режимі.
+
+Ліди з Facebook/Instagram позначені бейджем «Facebook Ads»; прямого
+каналу для відповіді з дашборду в них немає (Meta не дає messenger-id
+через Lead Ads) — телефон і email лежать у картці ліда, дзвоните або
+пишете вручну.
 
 Telegram-бот працює через polling — вебхук не потрібен, спрацює одразу
 після деплою.
 
 ## Що вміє застосунок
 
-- **Автозахоплення лідів**: клієнт пише боту в Telegram чи Viber →
-  лід одразу з'являється в «Холодна база», номер (якщо є) підтягується
-  автоматично.
+- **Автозахоплення лідів**: клієнт пише боту в Telegram чи Viber, або
+  заповнює форму в рекламі Facebook/Instagram → лід одразу з'являється
+  в «Холодна база», номер (якщо є) підтягується автоматично.
 - **Сповіщення**: кожен новий лід і завдання, дата яких настала —
   прилітає вам у Telegram.
 - **Скрипти**: бібліотека готових текстів (заперечення, оффери) у

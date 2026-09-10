@@ -10,6 +10,7 @@ from flask import Flask, jsonify, request, send_from_directory
 import db
 import telegram_bot
 import viber_bot
+import meta_leads
 from notifications import notify_admin
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
@@ -88,7 +89,7 @@ def api_send_to_lead(lead_id):
     elif lead["source"] == "viber":
         viber_bot.send_message(lead["external_id"], text)
     else:
-        return jsonify({"error": f"Невідоме джерело: {lead['source']}"}), 400
+        return jsonify({"error": f"Для джерела «{lead['source']}» немає каналу відповіді"}), 400
 
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     notes = (lead.get("notes") or "") + f"\n[{stamp}] Надіслано: {text}"
@@ -136,6 +137,29 @@ def viber_webhook():
     payload = request.get_json(force=True, silent=True) or {}
     reply = viber_bot.handle_event(payload)
     return jsonify(reply or {})
+
+
+# ---- Meta (Facebook/Instagram) Lead Ads webhook ----
+
+@app.route("/meta/webhook", methods=["GET"])
+def meta_webhook_verify():
+    # Meta's one-time handshake when you register the webhook URL.
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge", "")
+    if mode == "subscribe" and meta_leads.META_VERIFY_TOKEN and token == meta_leads.META_VERIFY_TOKEN:
+        return challenge, 200
+    return "forbidden", 403
+
+
+@app.route("/meta/webhook", methods=["POST"])
+def meta_webhook_receive():
+    signature = request.headers.get("X-Hub-Signature-256", "")
+    if not meta_leads.verify_signature(request.get_data(), signature):
+        return "invalid signature", 403
+    payload = request.get_json(force=True, silent=True) or {}
+    meta_leads.handle_webhook_payload(payload)
+    return "EVENT_RECEIVED", 200
 
 
 # ---- background workers ----

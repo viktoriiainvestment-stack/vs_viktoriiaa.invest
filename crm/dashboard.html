@@ -230,7 +230,8 @@
     {key:'client', label:'Клієнт', color:'var(--stage-client)'},
   ];
   const stageIndex = k => STAGES.findIndex(s=>s.key===k);
-  const CHANNEL_LABEL = {telegram:'Telegram', viber:'Viber'};
+  const CHANNEL_LABEL = {telegram:'Telegram', viber:'Viber', facebook:'Facebook Ads'};
+  const SENDABLE_CHANNELS = {telegram:'Telegram', viber:'Viber'};
 
   const boardEl = document.getElementById('board');
   const statsEl = document.getElementById('stats');
@@ -402,12 +403,14 @@
     document.getElementById('deleteLeadBtn').hidden = !lead;
 
     const sendBox = document.getElementById('sendBox');
-    const canSend = lead && lead.external_id && CHANNEL_LABEL[lead.source];
+    const canSend = lead && lead.external_id && SENDABLE_CHANNELS[lead.source];
     sendBox.hidden = !lead;
     if(lead){
       document.getElementById('sendChannelNote').textContent = canSend
-        ? `Канал: ${CHANNEL_LABEL[lead.source]}`
-        : 'Ліда додано вручну — немає каналу (Telegram/Viber) для надсилання.';
+        ? `Канал: ${SENDABLE_CHANNELS[lead.source]}`
+        : lead.source === 'facebook'
+          ? 'Лід із Facebook Ads — прямого каналу відповіді немає (лише телефон/email у нотатках).'
+          : 'Ліда додано вручну — немає каналу (Telegram/Viber) для надсилання.';
       document.getElementById('sendScriptSelect').disabled = !canSend;
       document.getElementById('sendText').disabled = !canSend;
       document.getElementById('sendBtn').disabled = !canSend;
