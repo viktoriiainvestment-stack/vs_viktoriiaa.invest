@@ -262,6 +262,43 @@
     background:var(--surface); border:1px solid var(--line); border-radius:14px;
     padding:11px 16px; font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;
   }
+
+  .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px; box-shadow:var(--shadow);}
+  .tab-btn{
+    border:none; background:transparent; color:var(--ink-soft); padding:7px 16px; border-radius:999px;
+    font-size:13.5px; font-weight:600; cursor:pointer;
+  }
+  .tab-btn.active{background:var(--accent); color:var(--accent-ink);}
+
+  .filters-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .filters-row label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .filters-row select{
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    border-radius:999px; padding:7px 14px; font-size:13px; font-family:inherit; cursor:pointer;
+  }
+
+  .section-label{
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--accent); display:flex; align-items:center; gap:6px;
+    margin-top:6px; padding-top:16px; border-top:1px solid var(--line);
+  }
+  .section-label:first-child{border-top:none; padding-top:0; margin-top:0;}
+
+  .tasks-list{display:flex; flex-direction:column; gap:8px;}
+  .task-list-row{
+    display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; padding:12px 14px; cursor:pointer; box-shadow:var(--shadow); flex-wrap:wrap;
+  }
+  .task-list-row:hover{border-color:var(--accent);}
+  .task-list-row.overdue{border-left:3px solid var(--danger);}
+  .task-list-row .twho{font-weight:700; font-family:'Plus Jakarta Sans',sans-serif; min-width:160px;}
+  .task-list-row .twhat{color:var(--ink-soft); font-size:13px; flex:1; min-width:140px;}
+  .task-list-row .twhen{font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
+  .task-list-row.overdue .twhen{color:var(--danger);}
+  .empty-state{
+    color:var(--ink-faint); font-size:13px; text-align:center; padding:40px 20px;
+    border:1px dashed var(--line); border-radius:16px;
+  }
   .toast{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:30;
     background:var(--ink); color:var(--bg); padding:9px 18px; border-radius:999px; font-size:13px;
@@ -282,6 +319,10 @@
       <p>Воронка лідів · інвестиційна нерухомість</p>
     </div>
     <div class="topbar-actions">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabBoardBtn" type="button">Воронка</button>
+        <button class="tab-btn" id="tabTasksBtn" type="button">Задачі</button>
+      </div>
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
@@ -299,7 +340,21 @@
 
   <section class="stats" id="stats"></section>
 
-  <main class="board" id="board"></main>
+  <div id="boardView">
+    <div class="filters-row" style="margin-bottom:14px;">
+      <label for="clientMonthFilter">Місяць угод (колонка «Клієнт»):</label>
+      <select id="clientMonthFilter"><option value="">Усі місяці</option></select>
+    </div>
+    <main class="board" id="board"></main>
+  </div>
+
+  <div id="tasksView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <label for="taskMonthFilter">Місяць:</label>
+      <select id="taskMonthFilter"><option value="">Усі місяці</option></select>
+    </div>
+    <div class="tasks-list" id="tasksList"></div>
+  </div>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -309,13 +364,12 @@
     <button class="close-x" id="closeDrawer" aria-label="Закрити">✕</button>
   </div>
   <div class="drawer-body">
+    <div class="section-label">🎯 Основне</div>
     <div class="field-row">
       <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
       <div class="field"><label for="f-phone">Телефон / контакт</label><input id="f-phone" type="text" placeholder="+380…"></div>
     </div>
-
     <div class="quick-actions" id="quickActions"></div>
-
     <div class="field-row">
       <div class="field">
         <label for="f-stage">Стадія</label>
@@ -329,6 +383,30 @@
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
     </div>
+
+    <div class="section-label">📅 Наступний крок</div>
+    <div class="field"><label for="f-next">Завдання</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
+    <div class="field-row">
+      <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
+      <div class="field"><label for="f-next-time">Час</label><input id="f-next-time" type="time"></div>
+    </div>
+    <div class="quick-actions">
+      <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
+      <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть завдання, дату і час, збережіть лід — з'явиться кнопка</span>
+    </div>
+
+    <div class="section-label">💬 Написати ліду</div>
+    <div class="box" id="sendBox" hidden>
+      <div class="muted" id="sendChannelHint">Обираєте текст → «Надіслати в Telegram» відкриє чат із готовим повідомленням, лишиться натиснути «Надіслати» там.</div>
+      <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
+      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
+      <div class="quick-actions">
+        <a id="sendTelegramLink" href="#" target="_blank" rel="noopener" hidden>✈️ Надіслати в Telegram</a>
+        <button type="button" class="btn small" id="copyTextBtn">📋 Копіювати текст</button>
+      </div>
+    </div>
+
+    <div class="section-label">📋 Деталі</div>
     <div class="field"><label for="f-prev">Попередній контакт</label><input id="f-prev" type="text" placeholder="Дата / нотатка"></div>
     <div class="field"><label for="f-portrait">Портрет клієнта</label><textarea id="f-portrait" rows="3" placeholder="Хто це, що цікавить, бюджет…"></textarea></div>
     <div class="field-row">
@@ -337,32 +415,19 @@
     </div>
     <div class="field"><label for="f-proposal">Пропозиція / заперечення</label><textarea id="f-proposal" rows="2"></textarea></div>
     <div class="field"><label for="f-deal">Деталі угоди</label><textarea id="f-deal" rows="2" placeholder="Сума, юніт, умови…"></textarea></div>
-
-    <div class="field"><label for="f-next">Наступний крок (завдання)</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
     <div class="field-row">
-      <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
-      <div class="field"><label for="f-next-time">Час</label><input id="f-next-time" type="time"></div>
-    </div>
-    <div class="quick-actions">
-      <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
-      <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть «Наступний крок», дату і час, збережіть лід — з'явиться кнопка</span>
+      <div class="field"><label for="f-deal-date">Дата угоди</label><input id="f-deal-date" type="date"></div>
+      <div class="field"><label for="f-commission">Комісія з угоди</label><input id="f-commission" type="text" placeholder="напр. 850$"></div>
     </div>
 
+    <div class="section-label">🗒 Нотатки</div>
     <div class="field">
-      <label for="f-notes">Нотатки / історія</label>
+      <label for="f-notes">Історія</label>
       <textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea>
       <div class="note-add-row">
         <input id="quickNote" type="text" placeholder="Швидка нотатка з датою…">
         <button class="btn small" id="addNoteBtn">+ Додати</button>
       </div>
-    </div>
-
-    <div class="box" id="sendBox" hidden>
-      <h3>💬 Написати ліду</h3>
-      <div class="muted">Прямої відправки з дашборду немає — обираєте текст, копіюєте й надсилаєте вручну.</div>
-      <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
-      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
-      <button class="btn small" id="copyTextBtn" style="align-self:flex-start;">📋 Копіювати текст</button>
     </div>
   </div>
   <div class="drawer-foot">
@@ -407,6 +472,13 @@
   const scriptsDrawer = document.getElementById('scriptsDrawer');
   const scrim = document.getElementById('scrim');
   const toastEl = document.getElementById('toast');
+  const boardView = document.getElementById('boardView');
+  const tasksView = document.getElementById('tasksView');
+  const tasksListEl = document.getElementById('tasksList');
+  const clientMonthFilterEl = document.getElementById('clientMonthFilter');
+  const taskMonthFilterEl = document.getElementById('taskMonthFilter');
+  const tabBoardBtn = document.getElementById('tabBoardBtn');
+  const tabTasksBtn = document.getElementById('tabTasksBtn');
 
   let leads = [];
   let scripts = [];
@@ -431,6 +503,12 @@
     return (phone||'').replace(/[^\d]/g, '');
   }
 
+  function intlPhone(phone){
+    const digits = digitsOnly(phone);
+    if(!digits) return '';
+    return digits.startsWith('0') ? '38' + digits : digits;
+  }
+
   function todayStr(){
     return new Date().toISOString().slice(0,10);
   }
@@ -446,16 +524,37 @@
     return sum;
   }
 
+  function parseCommission(text){
+    if(!text) return 0;
+    let sum = 0;
+    const re = /(\d+(?:[.,]\d+)?)/g;
+    let m;
+    while((m = re.exec(text))){
+      sum += parseFloat(m[1].replace(',', '.'));
+    }
+    return sum;
+  }
+
+  const MONTH_NAMES = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+  function monthLabel(ym){
+    const [y,m] = ym.split('-');
+    return MONTH_NAMES[parseInt(m,10)-1] + ' ' + y;
+  }
+
   function renderStats(){
     const total = leads.length;
     const byStage = {};
     STAGES.forEach(s => byStage[s.key] = 0);
     let dealSum = 0;
+    let commissionSum = 0;
     const today = todayStr();
     let dueCount = 0;
     leads.forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
-      if(l.stage === 'client') dealSum += parseDealValue(l.dealInfo);
+      if(l.stage === 'client'){
+        dealSum += parseDealValue(l.dealInfo);
+        commissionSum += parseCommission(l.commission);
+      }
       if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
     const tiles = [
@@ -463,6 +562,7 @@
       ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
       {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
       {label:'Сума угод (оцінка)', value: dealSum ? '≈' + dealSum.toLocaleString('uk-UA') + ' тис $' : '—'},
+      {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', color:'var(--good)'},
     ];
     statsEl.innerHTML = tiles.map(t => `
       <div class="stat">
@@ -494,9 +594,8 @@
   }
 
   function chatLinksHtml(phone){
-    const digits = digitsOnly(phone);
-    if(!digits) return '';
-    const intl = digits.startsWith('0') ? '38' + digits : digits;
+    const intl = intlPhone(phone);
+    if(!intl) return '';
     return `
       <div class="card-chat">
         <a href="https://t.me/+${intl}" target="_blank" rel="noopener" title="Написати в Telegram">✈️</a>
@@ -539,10 +638,27 @@
     `;
   }
 
+  function populateMonthFilter(selectEl, months, keep){
+    const current = keep ? selectEl.value : '';
+    selectEl.innerHTML = '<option value="">Усі місяці</option>' +
+      months.map(ym => `<option value="${ym}">${esc(monthLabel(ym))}</option>`).join('');
+    if(months.includes(current)) selectEl.value = current;
+  }
+
   function renderBoard(){
+    populateMonthFilter(
+      clientMonthFilterEl,
+      [...new Set(leads.filter(l=>l.stage==='client' && l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
+      true
+    );
+    const clientMonth = clientMonthFilterEl.value;
     const filtered = leads.filter(matchesQuery);
     boardEl.innerHTML = STAGES.map(stage => {
-      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
+      let items = filtered.filter(l => l.stage === stage.key);
+      if(stage.key === 'client' && clientMonth){
+        items = items.filter(l => (l.dealDate||'').slice(0,7) === clientMonth);
+      }
+      items = items.sort((a,b)=>(a.order||0)-(b.order||0));
       return `
         <div class="column" data-stage="${stage.key}">
           <div class="column-head">
@@ -558,10 +674,33 @@
     wireDragAndDrop();
   }
 
+  function renderTasksView(){
+    const withTasks = leads.filter(l => l.nextActionAt);
+    populateMonthFilter(
+      taskMonthFilterEl,
+      [...new Set(withTasks.map(l=>l.nextActionAt.slice(0,7)))].sort().reverse(),
+      true
+    );
+    const taskMonth = taskMonthFilterEl.value;
+    const today = todayStr();
+    const rows = withTasks
+      .filter(l => !taskMonth || l.nextActionAt.slice(0,7) === taskMonth)
+      .sort((a,b)=> (a.nextActionAt+ (a.nextActionTime||'')).localeCompare(b.nextActionAt + (b.nextActionTime||'')));
+    tasksListEl.innerHTML = rows.length ? rows.map(l => `
+      <div class="task-list-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
+        <span class="badge" style="background:var(--accent-soft); color:var(--accent);">${esc(STAGES.find(s=>s.key===l.stage)?.label || l.stage)}</span>
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(l.nextAction || '')}</span>
+        <span class="twhen">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
+      </div>
+    `).join('') : '<div class="empty-state">Немає завдань за цей період</div>';
+  }
+
   function render(){
     renderStats();
     renderTasks();
     renderBoard();
+    renderTasksView();
   }
 
   function fillScriptSelect(){
@@ -572,10 +711,8 @@
 
   function renderQuickActions(lead){
     const box = document.getElementById('quickActions');
-    if(!lead || !lead.phone){ box.innerHTML = ''; return; }
-    const digits = digitsOnly(lead.phone);
-    if(!digits){ box.innerHTML = ''; return; }
-    const intl = digits.startsWith('0') ? '38' + digits : digits;
+    const intl = intlPhone(lead?.phone);
+    if(!intl){ box.innerHTML = ''; return; }
     box.innerHTML = `
       <a href="tel:+${intl}">📞 Подзвонити</a>
       <a href="https://t.me/+${intl}" target="_blank" rel="noopener">✈️ Telegram</a>
@@ -592,6 +729,24 @@
     }else{
       toast('Копіювання недоступне в цьому вікні');
     }
+  }
+
+  function updateSendTelegramLink(){
+    const link = document.getElementById('sendTelegramLink');
+    const hint = document.getElementById('sendChannelHint');
+    const lead = leads.find(l=>l.id===editingId);
+    const intl = intlPhone(lead?.phone);
+    const text = document.getElementById('sendText').value.trim();
+    if(!intl || !text){
+      link.hidden = true;
+      hint.textContent = intl
+        ? 'Впишіть або оберіть текст — з’явиться кнопка «Надіслати в Telegram».'
+        : 'У ліда немає телефону — надіслати в Telegram нема куди.';
+      return;
+    }
+    link.href = `https://t.me/+${intl}?text=${encodeURIComponent(text)}`;
+    link.hidden = false;
+    hint.textContent = 'Відкриє чат у Telegram з готовим текстом — лишиться натиснути «Надіслати» там.';
   }
 
   function updateGcalLink(){
@@ -639,6 +794,8 @@
     document.getElementById('f-decision').value = lead?.decision || '';
     document.getElementById('f-proposal').value = lead?.proposal || '';
     document.getElementById('f-deal').value = lead?.dealInfo || '';
+    document.getElementById('f-deal-date').value = lead?.dealDate || '';
+    document.getElementById('f-commission').value = lead?.commission || '';
     document.getElementById('f-next').value = lead?.nextAction || '';
     document.getElementById('f-next-date').value = lead?.nextActionAt || '';
     document.getElementById('f-next-time').value = lead?.nextActionTime || '';
@@ -646,9 +803,11 @@
     document.getElementById('quickNote').value = '';
     document.getElementById('deleteLeadBtn').hidden = !lead;
     document.getElementById('sendBox').hidden = !lead;
+    document.getElementById('sendScriptSelect').value = '';
     document.getElementById('sendText').value = '';
     renderQuickActions(lead);
     updateGcalLink();
+    updateSendTelegramLink();
     drawer.hidden = false;
     scrim.hidden = false;
     document.getElementById('f-name').focus();
@@ -669,6 +828,8 @@
       decision: document.getElementById('f-decision').value.trim(),
       proposal: document.getElementById('f-proposal').value.trim(),
       dealInfo: document.getElementById('f-deal').value.trim(),
+      dealDate: document.getElementById('f-deal-date').value,
+      commission: document.getElementById('f-commission').value.trim(),
       nextAction: document.getElementById('f-next').value.trim(),
       nextActionAt: document.getElementById('f-next-date').value,
       nextActionTime: document.getElementById('f-next-time').value,
@@ -803,7 +964,9 @@
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
     if(s) document.getElementById('sendText').value = s.text;
+    updateSendTelegramLink();
   });
+  document.getElementById('sendText').addEventListener('input', updateSendTelegramLink);
   document.getElementById('copyTextBtn').addEventListener('click', ()=>{
     const t = document.getElementById('sendText').value.trim();
     if(t) copyText(t);
@@ -811,6 +974,21 @@
   searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
+  });
+
+  function switchTab(view){
+    boardView.hidden = view !== 'board';
+    tasksView.hidden = view !== 'tasks';
+    tabBoardBtn.classList.toggle('active', view === 'board');
+    tabTasksBtn.classList.toggle('active', view === 'tasks');
+  }
+  tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
+  tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
+  clientMonthFilterEl.addEventListener('change', renderBoard);
+  taskMonthFilterEl.addEventListener('change', renderTasksView);
+  tasksListEl.addEventListener('click', (e)=>{
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
   });
 
   // ---- scripts panel ----
