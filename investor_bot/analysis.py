@@ -77,3 +77,41 @@ def answer_question(project_name, question, chunks):
 def select_relevant(project_id, question, db_module, k=25):
     chunks = db_module.list_chunks(project_id)
     return top_chunks(question, chunks, k=k)
+
+
+def select_relevant_for_chat(chat_id, question, db_module, k=40):
+    chunks = db_module.list_chunks_for_chat(chat_id)
+    return top_chunks(question, chunks, k=k, max_chars=55000)
+
+
+def answer_cross_project(question, projects, chunks):
+    """Питання одразу по ВСІХ збережених проектах інвестора (порівняння,
+    вибір найкращого, оцінка ризику по регіону тощо) — а не по одному
+    активному проекту."""
+    reports = [p for p in projects if p.get("last_report")]
+    if not chunks and not reports:
+        return (
+            "У базі ще немає жодного проаналізованого проекту — спершу "
+            "додайте матеріали через /project і /analyze."
+        )
+    system = (
+        ANALYST_PERSONA
+        + "\n\nІнвестор ставить питання одразу по ВСІХ своїх збережених "
+        "проектах (порівняння між ними, вибір найкращого, оцінка ризику по "
+        "регіону тощо). Нижче — зведені аналізи проектів (якщо вже робились) "
+        "і фрагменти оригінальних матеріалів. У відповіді чітко розділяй:\n"
+        "1) Факти й цифри з конкретних проектів — з посиланням «Проект: "
+        "<назва>, Джерело: <документ>, <місце>».\n"
+        "2) Загальні міркування, яких немає в документах інвестора "
+        "(наприклад, загальна ситуація з безпекою в регіоні) — познач їх "
+        "окремо як «Загальний контекст (не з ваших матеріалів)» і подавай як "
+        "орієнтовну думку, а не факт із документів.\n"
+        "Не приписуй загальні знання проектним документам і навпаки."
+    )
+    blocks = []
+    for p in reports:
+        blocks.append(f"=== Проект «{p['name']}» — попередній зведений аналіз ===\n{p['last_report'][:4000]}")
+    for c in chunks:
+        blocks.append(f"[Проект: {c['project_name']}, Матеріал: {c['material_title']}, {c['location']}]\n{c['text']}")
+    user = f"Питання інвестора (по всіх проектах разом): {question}\n\n" + "\n\n".join(blocks)
+    return claude_client.ask(system, user, max_tokens=1600)

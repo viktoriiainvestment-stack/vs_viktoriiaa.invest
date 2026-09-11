@@ -22,6 +22,7 @@ def init_db():
             name TEXT NOT NULL,
             drive_folder_id TEXT DEFAULT '',
             drive_folder_link TEXT DEFAULT '',
+            last_report TEXT DEFAULT '',
             created_at TEXT NOT NULL
         )
         """
@@ -119,6 +120,13 @@ def create_project(chat_id, name, drive_folder_id="", drive_folder_link=""):
     return get_project(project_id)
 
 
+def save_report(project_id, report_text):
+    conn = get_conn()
+    conn.execute("UPDATE projects SET last_report = ? WHERE id = ?", (report_text, project_id))
+    conn.commit()
+    conn.close()
+
+
 def set_active_project(chat_id, project_id):
     conn = get_conn()
     conn.execute(
@@ -193,6 +201,23 @@ def list_chunks(project_id):
            FROM chunks JOIN materials ON materials.id = chunks.material_id
            WHERE chunks.project_id = ? ORDER BY chunks.id""",
         (project_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def list_chunks_for_chat(chat_id):
+    """Фрагменти з УСІХ проектів цього чату — для питань "по всій базі"
+    (порівняння проектів, вибір найкращого, оцінка ризику по регіону)."""
+    conn = get_conn()
+    rows = conn.execute(
+        """SELECT chunks.*, materials.title AS material_title, materials.drive_file_link AS drive_file_link,
+                  materials.kind AS material_kind, projects.name AS project_name
+           FROM chunks
+           JOIN materials ON materials.id = chunks.material_id
+           JOIN projects ON projects.id = chunks.project_id
+           WHERE projects.chat_id = ? ORDER BY chunks.id""",
+        (str(chat_id),),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]

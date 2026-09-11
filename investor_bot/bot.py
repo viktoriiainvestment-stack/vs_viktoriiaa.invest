@@ -25,6 +25,12 @@ QUESTION_STARTERS = (
     "коли", "покажи", "знайди", "порахуй", "назви", "що", "хто", "як",
     "розкажи", "поясни",
 )
+COMPARE_TRIGGERS = (
+    "порівняй", "порівняти", "порівняння", "які проекти", "який проект",
+    "у якому проекті", "в якому проекті", "по всіх проект", "з усіх проект",
+    "по всій базі", "з усієї бази", "найкращ", "найбезпечн", "найдохідн",
+    "де краще", "де безпечніше", "де вигідніше",
+)
 
 WELCOME = (
     "Привіт! Я аналізую інвестиційні пропозиції по нерухомості.\n\n"
@@ -33,10 +39,13 @@ WELCOME = (
     "посилання), презентації, фінмодель у Excel, договори, фото — я "
     "проаналізую кожен матеріал і складу копію в Google Диск, у папку "
     "«Ринок»/назва проекту.\n"
-    "3. Питайте що завгодно по проекту звичайним текстом (наприклад: "
-    "«яка орендна ставка в фінмоделі для готелю?») — відповім і вкажу, "
-    "з якого документа взяв інформацію.\n"
-    "4. /analyze — зведений інвестиційний аналіз по всіх матеріалах проекту.\n\n"
+    "3. Питайте по цьому проекту звичайним текстом (наприклад: «яка "
+    "орендна ставка в фінмоделі для готелю?») — відповім і вкажу, з якого "
+    "документа взяв інформацію.\n"
+    "4. /analyze — зведений інвестиційний аналіз по всіх матеріалах проекту.\n"
+    "5. /compare — питання одразу по ВСІХ ваших збережених проектах "
+    "(«який з проектів дохідніший», «де зараз безпечніше вкладати») — "
+    "нічого не забувається, все лишається в базі назавжди.\n\n"
     "/projects — список проектів, /use Назва — перемкнутись, /status — "
     "що зараз активне."
 )
@@ -48,6 +57,11 @@ def _looks_like_question(text):
         return True
     first_word = stripped.lower().split(" ", 1)[0].strip(",.!") if stripped else ""
     return first_word in QUESTION_STARTERS
+
+
+def _looks_cross_project(text):
+    low = text.lower()
+    return any(trigger in low for trigger in COMPARE_TRIGGERS)
 
 
 def _require_project(chat_id):
@@ -171,6 +185,7 @@ if bot:
         except Exception as e:
             bot.reply_to(message, f"Не вдалось скласти аналіз: {e}")
             return
+        db.save_report(project["id"], report)
         bot.send_message(message.chat.id, report)
 
     @bot.message_handler(commands=["ask"])
@@ -189,6 +204,28 @@ if bot:
         try:
             chunks = analysis.select_relevant(project["id"], question, db)
             answer = analysis.answer_question(project["name"], question, chunks)
+        except Exception as e:
+            bot.reply_to(message, f"Не вдалось відповісти: {e}")
+            return
+        bot.reply_to(message, answer)
+
+    @bot.message_handler(commands=["compare"])
+    def handle_compare(message):
+        question = message.text.split(" ", 1)[1].strip() if " " in message.text else ""
+        if not question:
+            bot.reply_to(message, "Напишіть питання після команди: /compare де зараз безпечніше вкладати?")
+            return
+        _answer_cross_project(message, question)
+
+    def _answer_cross_project(message, question):
+        chat_id = message.chat.id
+        projects = db.list_projects(chat_id)
+        if not projects:
+            bot.reply_to(message, "У вас ще немає жодного проекту. Створіть: /project Назва")
+            return
+        try:
+            chunks = analysis.select_relevant_for_chat(chat_id, question, db)
+            answer = analysis.answer_cross_project(question, projects, chunks)
         except Exception as e:
             bot.reply_to(message, f"Не вдалось відповісти: {e}")
             return
@@ -297,8 +334,12 @@ if bot:
                 _store_and_report(message, project, "link", title or url, chunks, source_url=url)
             return
 
-        if project and _looks_like_question(text):
-            _answer_question(message, text)
+        cross = _looks_cross_project(text)
+        if cross or _looks_like_question(text):
+            if not project or cross:
+                _answer_cross_project(message, text)
+            else:
+                _answer_question(message, text)
             return
 
         if not project:
