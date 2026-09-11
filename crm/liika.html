@@ -329,13 +329,14 @@
     <div class="field"><label for="f-proposal">Пропозиція / заперечення</label><textarea id="f-proposal" rows="2"></textarea></div>
     <div class="field"><label for="f-deal">Деталі угоди</label><textarea id="f-deal" rows="2" placeholder="Сума, юніт, умови…"></textarea></div>
 
+    <div class="field"><label for="f-next">Наступний крок (завдання)</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
     <div class="field-row">
-      <div class="field"><label for="f-next">Наступний крок</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
       <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
+      <div class="field"><label for="f-next-time">Час</label><input id="f-next-time" type="time"></div>
     </div>
     <div class="quick-actions">
-      <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>📅 Додати в Google Calendar</a>
-      <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть «Наступний крок» і дату, збережіть лід — з'явиться кнопка календаря</span>
+      <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
+      <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть «Наступний крок», дату і час, збережіть лід — з'явиться кнопка</span>
     </div>
 
     <div class="field">
@@ -472,7 +473,7 @@
       <div class="task-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
         <span class="who">${esc(l.name || l.phone || '(без імені)')}</span>
         <span class="what">${esc(l.nextAction||'')}</span>
-        <span class="when">${esc(l.nextActionAt)}</span>
+        <span class="when">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
       </div>
     `).join('');
   }
@@ -504,7 +505,8 @@
     if(l.nextActionAt){
       const cls = l.nextActionAt < today ? '' : (l.nextActionAt === today ? 'soon' : 'hidden-pill');
       if(l.nextActionAt <= today){
-        taskPill = `<span class="task-pill ${cls}">⏰ ${esc(l.nextAction || 'завдання')} · ${esc(l.nextActionAt)}</span>`;
+        const when = l.nextActionAt + (l.nextActionTime ? ' ' + l.nextActionTime : '');
+        taskPill = `<span class="task-pill ${cls}">⏰ ${esc(l.nextAction || 'завдання')} · ${esc(when)}</span>`;
       }
     }
     return `
@@ -587,25 +589,31 @@
     const link = document.getElementById('gcalLink');
     const hint = document.getElementById('gcalHint');
     const dateVal = document.getElementById('f-next-date').value;
+    const timeVal = document.getElementById('f-next-time').value;
     const nextVal = document.getElementById('f-next').value.trim();
-    if(!editingId || !dateVal){
+    if(!editingId || !dateVal || !timeVal){
       link.hidden = true; hint.hidden = false;
       hint.textContent = !editingId
-        ? 'Спершу збережіть лід — тоді з’явиться кнопка календаря'
-        : 'Вкажіть дату «Наступного кроку» — з’явиться кнопка календаря';
+        ? 'Спершу збережіть лід — тоді з’явиться кнопка'
+        : 'Вкажіть дату й час «Наступного кроку» — з’явиться кнопка';
       return;
     }
     const lead = leads.find(l=>l.id===editingId) || {};
     const who = lead.name || lead.phone || 'лід';
-    const title = encodeURIComponent(`Лід: ${who}${nextVal ? ' — ' + nextVal : ''}`);
-    const start = dateVal.replace(/-/g,'');
-    const endDate = new Date(dateVal + 'T00:00:00');
-    endDate.setDate(endDate.getDate()+1);
-    const end = endDate.toISOString().slice(0,10).replace(/-/g,'');
+    const title = encodeURIComponent(`☑️ Завдання: ${who}${nextVal ? ' — ' + nextVal : ''}`);
+    // 30-хвилинний блок під конкретний час — так нагадування Google Calendar
+    // прилетить саме о заданій годині, а не «десь протягом дня».
+    const fmt = d => d.getFullYear()
+      + String(d.getMonth()+1).padStart(2,'0')
+      + String(d.getDate()).padStart(2,'0') + 'T'
+      + String(d.getHours()).padStart(2,'0')
+      + String(d.getMinutes()).padStart(2,'0') + '00';
+    const startDt = new Date(`${dateVal}T${timeVal}:00`);
+    const endDt = new Date(startDt.getTime() + 30*60000);
     const leadUrl = location.origin + location.pathname + '?lead=' + encodeURIComponent(editingId);
     const detailsLines = [nextVal, lead.phone ? ('Телефон: ' + lead.phone) : '', 'Картка ліда: ' + leadUrl].filter(Boolean);
     const details = encodeURIComponent(detailsLines.join('\n'));
-    link.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+    link.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(startDt)}/${fmt(endDt)}&details=${details}`;
     link.hidden = false; hint.hidden = true;
   }
 
@@ -624,6 +632,7 @@
     document.getElementById('f-deal').value = lead?.dealInfo || '';
     document.getElementById('f-next').value = lead?.nextAction || '';
     document.getElementById('f-next-date').value = lead?.nextActionAt || '';
+    document.getElementById('f-next-time').value = lead?.nextActionTime || '';
     document.getElementById('f-notes').value = lead?.notes || '';
     document.getElementById('quickNote').value = '';
     document.getElementById('deleteLeadBtn').hidden = !lead;
@@ -653,6 +662,7 @@
       dealInfo: document.getElementById('f-deal').value.trim(),
       nextAction: document.getElementById('f-next').value.trim(),
       nextActionAt: document.getElementById('f-next-date').value,
+      nextActionTime: document.getElementById('f-next-time').value,
       notes: document.getElementById('f-notes').value.trim(),
     };
   }
@@ -780,6 +790,7 @@
   document.getElementById('addNoteBtn').addEventListener('click', addQuickNote);
   document.getElementById('f-next').addEventListener('input', updateGcalLink);
   document.getElementById('f-next-date').addEventListener('input', updateGcalLink);
+  document.getElementById('f-next-time').addEventListener('input', updateGcalLink);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
     if(s) document.getElementById('sendText').value = s.text;
