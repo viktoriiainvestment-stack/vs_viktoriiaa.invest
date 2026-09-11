@@ -240,6 +240,8 @@
     padding:7px 13px; border-radius:999px; font-size:12.5px; font-weight:600; cursor:pointer;
   }
   .quick-actions a:hover, .quick-actions button:hover{border-color:var(--accent); color:var(--accent);}
+  .quick-actions a.disabled{opacity:.45; pointer-events:none; cursor:default;}
+  .quick-actions a.disabled:hover{border-color:var(--line); color:var(--ink);}
 
   .box{
     border:1px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column;
@@ -401,7 +403,7 @@
       <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
       <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
       <div class="quick-actions">
-        <a id="sendTelegramLink" href="#" target="_blank" rel="noopener" hidden>✈️ Надіслати</a>
+        <a id="sendTelegramLink" class="disabled" href="javascript:void(0)" target="_blank" rel="noopener">✈️ Надіслати</a>
       </div>
     </div>
 
@@ -737,14 +739,15 @@
     const intl = intlPhone(lead?.phone);
     const text = document.getElementById('sendText').value.trim();
     if(!intl || !text){
-      link.hidden = true;
+      link.classList.add('disabled');
+      link.href = 'javascript:void(0)';
       hint.textContent = intl
-        ? 'Впишіть або оберіть текст — з’явиться кнопка «Надіслати».'
+        ? 'Впишіть або оберіть текст, щоб увімкнути кнопку «Надіслати».'
         : 'У ліда немає телефону — надіслати нема куди.';
       return;
     }
     link.href = `https://t.me/+${intl}?text=${encodeURIComponent(text)}`;
-    link.hidden = false;
+    link.classList.remove('disabled');
     hint.textContent = 'Відкриє чат у Telegram з готовим текстом — лишиться натиснути «Надіслати» там.';
   }
 
