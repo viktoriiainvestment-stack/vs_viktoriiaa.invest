@@ -23,7 +23,7 @@ def quick_take(project_name, title, text):
         "Не вигадуй цифр, яких немає в тексті."
     )
     user = f"Проект: {project_name}\nМатеріал: {title}\n\nТекст:\n{text[:12000]}"
-    return claude_client.ask(system, user, max_tokens=500)
+    return claude_client.ask(system, user, max_tokens=500, effort="low")
 
 
 def full_report(project_name, materials_with_text):

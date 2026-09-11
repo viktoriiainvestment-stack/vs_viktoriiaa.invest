@@ -14,25 +14,37 @@ def is_configured():
     return _client is not None
 
 
-def ask(system, user_text, max_tokens=1500):
+def _text(response):
+    """response.content may start with a ThinkingBlock (adaptive thinking is
+    on by default) before the actual TextBlock — pick the text out, don't
+    assume content[0]."""
+    for block in response.content:
+        if block.type == "text":
+            return block.text
+    return ""
+
+
+def ask(system, user_text, max_tokens=1500, effort="medium"):
     if not _client:
         raise RuntimeError("CLAUDE_API_KEY не налаштовано.")
     response = _client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=max_tokens,
         system=system,
+        output_config={"effort": effort},
         messages=[{"role": "user", "content": user_text}],
     )
-    return response.content[0].text
+    return _text(response)
 
 
-def ask_with_image(system, user_text, image_bytes, mime_type, max_tokens=700):
+def ask_with_image(system, user_text, image_bytes, mime_type, max_tokens=700, effort="low"):
     if not _client:
         raise RuntimeError("CLAUDE_API_KEY не налаштовано.")
     response = _client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=max_tokens,
         system=system,
+        output_config={"effort": effort},
         messages=[
             {
                 "role": "user",
@@ -50,4 +62,4 @@ def ask_with_image(system, user_text, image_bytes, mime_type, max_tokens=700):
             }
         ],
     )
-    return response.content[0].text
+    return _text(response)
