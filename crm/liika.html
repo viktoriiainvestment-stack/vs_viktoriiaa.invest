@@ -397,12 +397,11 @@
 
     <div class="section-label">💬 Написати ліду</div>
     <div class="box" id="sendBox" hidden>
-      <div class="muted" id="sendChannelHint">Обираєте текст → «Надіслати в Telegram» відкриє чат із готовим повідомленням, лишиться натиснути «Надіслати» там.</div>
+      <div class="muted" id="sendChannelHint">Обираєте скрипт → «Надіслати» відкриє Telegram із готовим текстом — лишиться натиснути «Надіслати» вже там.</div>
       <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
       <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
       <div class="quick-actions">
-        <a id="sendTelegramLink" href="#" target="_blank" rel="noopener" hidden>✈️ Надіслати в Telegram</a>
-        <button type="button" class="btn small" id="copyTextBtn">📋 Копіювати текст</button>
+        <a id="sendTelegramLink" href="#" target="_blank" rel="noopener" hidden>✈️ Надіслати</a>
       </div>
     </div>
 
@@ -740,8 +739,8 @@
     if(!intl || !text){
       link.hidden = true;
       hint.textContent = intl
-        ? 'Впишіть або оберіть текст — з’явиться кнопка «Надіслати в Telegram».'
-        : 'У ліда немає телефону — надіслати в Telegram нема куди.';
+        ? 'Впишіть або оберіть текст — з’явиться кнопка «Надіслати».'
+        : 'У ліда немає телефону — надіслати нема куди.';
       return;
     }
     link.href = `https://t.me/+${intl}?text=${encodeURIComponent(text)}`;
@@ -967,10 +966,6 @@
     updateSendTelegramLink();
   });
   document.getElementById('sendText').addEventListener('input', updateSendTelegramLink);
-  document.getElementById('copyTextBtn').addEventListener('click', ()=>{
-    const t = document.getElementById('sendText').value.trim();
-    if(t) copyText(t);
-  });
   searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
