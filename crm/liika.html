@@ -320,11 +320,11 @@
       <div class="field">
         <label for="f-stage">Стадія</label>
         <select id="f-stage">
-          <option value="cold">Холодна база</option>
           <option value="qualification">Кваліфікація</option>
           <option value="qualified">Якісний лід</option>
           <option value="investor">Інвестор · Оффер</option>
           <option value="client">Клієнт</option>
+          <option value="cold">Холодна база</option>
         </select>
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
@@ -389,11 +389,11 @@
 <script>
 (function(){
   const STAGES = [
-    {key:'cold', label:'Холодна база', color:'var(--stage-cold)'},
     {key:'qualification', label:'Кваліфікація', color:'var(--stage-qualification)'},
     {key:'qualified', label:'Якісний лід', color:'var(--stage-qualified)'},
     {key:'investor', label:'Інвестор · Оффер', color:'var(--stage-investor)'},
     {key:'client', label:'Клієнт', color:'var(--stage-client)'},
+    {key:'cold', label:'Холодна база', color:'var(--stage-cold)'},
   ];
   const stageIndex = k => STAGES.findIndex(s=>s.key===k);
 
