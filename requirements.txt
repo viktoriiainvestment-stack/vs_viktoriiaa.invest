@@ -3,3 +3,11 @@ anthropic
 Flask
 requests
 gunicorn
+
+# investor_bot/ — аналіз інвестиційних матеріалів
+pypdf
+python-docx
+openpyxl
+beautifulsoup4
+google-api-python-client
+google-auth
