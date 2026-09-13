@@ -325,6 +325,7 @@
         <button class="tab-btn active" id="tabBoardBtn" type="button">Воронка</button>
         <button class="tab-btn" id="tabTasksBtn" type="button">Задачі</button>
         <button class="tab-btn" id="tabDealsBtn" type="button">Угоди</button>
+        <button class="tab-btn" id="tabInactiveBtn" type="button">Не актуально</button>
       </div>
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -362,6 +363,13 @@
     </div>
     <div class="tasks-list" id="dealsList"></div>
   </div>
+
+  <div id="inactiveView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <span class="muted">Ліди зі статусом «Не актуально». Раз на 6 місяців кожному автоматично ставиться нагадування зв'язатись знову — воно зʼявиться у «Задачах».</span>
+    </div>
+    <div class="tasks-list" id="inactiveList"></div>
+  </div>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -386,6 +394,7 @@
           <option value="qualified">Якісний лід</option>
           <option value="investor">Інвестор · Оффер</option>
           <option value="client">Клієнт</option>
+          <option value="inactive">Не актуально</option>
         </select>
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
@@ -472,8 +481,12 @@
   // живуть окремо, у вкладці «Угоди».
   const BOARD_STAGES = ALL_STAGES.slice(0, 3);
   const DEAL_STAGE_KEYS = ['investor', 'client'];
+  // «Не актуально» — поза лійкою: не бере участі у степері/drag&drop,
+  // ставиться тільки вручну через картку ліда.
+  const INACTIVE_STAGE = {key:'inactive', label:'Не актуально', color:'var(--ink-faint)'};
+  const REENGAGE_MONTHS = 6;
   const stageIndex = k => ALL_STAGES.findIndex(s=>s.key===k);
-  const stageLabel = k => ALL_STAGES.find(s=>s.key===k)?.label || k;
+  const stageLabel = k => ALL_STAGES.find(s=>s.key===k)?.label || (k===INACTIVE_STAGE.key ? INACTIVE_STAGE.label : k);
 
   const boardEl = document.getElementById('board');
   const statsEl = document.getElementById('stats');
@@ -488,13 +501,16 @@
   const boardView = document.getElementById('boardView');
   const tasksView = document.getElementById('tasksView');
   const dealsView = document.getElementById('dealsView');
+  const inactiveView = document.getElementById('inactiveView');
   const tasksListEl = document.getElementById('tasksList');
   const dealsListEl = document.getElementById('dealsList');
+  const inactiveListEl = document.getElementById('inactiveList');
   const taskMonthFilterEl = document.getElementById('taskMonthFilter');
   const dealMonthFilterEl = document.getElementById('dealMonthFilter');
   const tabBoardBtn = document.getElementById('tabBoardBtn');
   const tabTasksBtn = document.getElementById('tabTasksBtn');
   const tabDealsBtn = document.getElementById('tabDealsBtn');
+  const tabInactiveBtn = document.getElementById('tabInactiveBtn');
 
   let leads = [];
   let scripts = [];
@@ -552,11 +568,13 @@
     ALL_STAGES.forEach(s => byStage[s.key] = 0);
     let commissionSum = 0;
     let dealsCount = 0;
+    let inactiveCount = 0;
     const today = todayStr();
     let dueCount = 0;
     leads.forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
       if(DEAL_STAGE_KEYS.includes(l.stage)) dealsCount++;
+      if(l.stage === 'inactive') inactiveCount++;
       if(l.stage === 'client') commissionSum += parseCommission(l.commission);
       if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
@@ -564,6 +582,7 @@
       {label:'Усього лідів', value: total},
       ...BOARD_STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
       {label:'Угоди (інвестор+клієнт)', value: dealsCount, color:'var(--stage-investor)'},
+      {label:'Не актуально', value: inactiveCount, color:'var(--ink-faint)'},
       {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
       {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', color:'var(--good)'},
     ];
@@ -716,11 +735,44 @@
     }).join('') : '<div class="empty-state">Ще немає угод за цей період</div>';
   }
 
+  function addMonths(dateStr, months){
+    const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    d.setMonth(d.getMonth() + months);
+    return d.toISOString().slice(0,10);
+  }
+
+  function renderInactiveView(){
+    const rows = leads.filter(l => l.stage === 'inactive')
+      .sort((a,b)=> (a.nextActionAt||'9999').localeCompare(b.nextActionAt||'9999'));
+    inactiveListEl.innerHTML = rows.length ? rows.map(l => `
+      <div class="task-list-row" data-id="${esc(l.id)}">
+        <span class="badge" style="background:var(--ink-faint); color:#fff;">Не актуально</span>
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(l.notes || l.portrait || l.diagnosis || '—')}</span>
+        <span class="twhen">${l.nextActionAt ? 'Зв\'язатись: ' + esc(l.nextActionAt) : 'дату не задано'}</span>
+        <button type="button" class="btn small" data-reengage="${esc(l.id)}">🔁 +6 міс</button>
+      </div>
+    `).join('') : '<div class="empty-state">Немає неактуальних лідів</div>';
+  }
+
+  async function reengageLater(id){
+    const l = leads.find(x=>x.id===id);
+    if(!l) return;
+    const updates = {
+      nextActionAt: addMonths(l.nextActionAt, REENGAGE_MONTHS),
+      nextAction: l.nextAction || 'Розсилка: перевірити, чи стало актуально',
+    };
+    if(!leadsCol){ Object.assign(l, updates); render(); return; }
+    try{ await leadsCol.doc(id).update(updates); toast('Перенесено на +6 міс'); }
+    catch(e){ console.error(e); }
+  }
+
   function render(){
     renderStats();
     renderTasks();
     renderBoard();
     renderTasksView();
+    renderInactiveView();
     renderDealsView();
   }
 
@@ -863,6 +915,12 @@
     const data = currentFormData();
     data.updatedAt = Date.now();
     if(!data.name && !data.phone){ closeDrawer(); return; }
+    const prevLead = editingId ? leads.find(l=>l.id===editingId) : null;
+    const enteringInactive = data.stage === 'inactive' && (!prevLead || prevLead.stage !== 'inactive');
+    if(enteringInactive && !data.nextActionAt){
+      data.nextActionAt = addMonths(null, REENGAGE_MONTHS);
+      data.nextAction = data.nextAction || 'Розсилка: перевірити, чи стало актуально';
+    }
     if(!leadsCol){
       if(editingId){
         const i = leads.findIndex(l=>l.id===editingId);
@@ -998,13 +1056,16 @@
     boardView.hidden = view !== 'board';
     tasksView.hidden = view !== 'tasks';
     dealsView.hidden = view !== 'deals';
+    inactiveView.hidden = view !== 'inactive';
     tabBoardBtn.classList.toggle('active', view === 'board');
     tabTasksBtn.classList.toggle('active', view === 'tasks');
     tabDealsBtn.classList.toggle('active', view === 'deals');
+    tabInactiveBtn.classList.toggle('active', view === 'inactive');
   }
   tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
   tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
   tabDealsBtn.addEventListener('click', ()=>switchTab('deals'));
+  tabInactiveBtn.addEventListener('click', ()=>switchTab('inactive'));
   taskMonthFilterEl.addEventListener('change', renderTasksView);
   dealMonthFilterEl.addEventListener('change', renderDealsView);
   tasksListEl.addEventListener('click', (e)=>{
@@ -1012,6 +1073,12 @@
     if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
   });
   dealsListEl.addEventListener('click', (e)=>{
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+  });
+  inactiveListEl.addEventListener('click', (e)=>{
+    const reengageId = e.target.closest('[data-reengage]')?.dataset.reengage;
+    if(reengageId){ e.stopPropagation(); reengageLater(reengageId); return; }
     const row = e.target.closest('.task-list-row');
     if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
   });
