@@ -173,7 +173,14 @@ def _digest_loop():
 
 
 def _start_background_workers():
-    if telegram_bot.bot:
+    # Якщо в TELEGRAM_CRM_BOT_TOKEN і QUIZ_BOT_TOKEN стоїть один і той
+    # самий токен (один бот на все: і квіз, і сповіщення) — не
+    # запускаємо два polling-цикли на той самий токен, Telegram таке
+    # не дозволяє (конфлікт getUpdates). Досить одного, квіз-бот
+    # покриває обидві ролі, а notify_admin() однаково працює через
+    # TELEGRAM_CRM_BOT_TOKEN незалежно від polling.
+    same_bot = bool(telegram_bot.TOKEN) and telegram_bot.TOKEN == quiz_bot.TOKEN
+    if telegram_bot.bot and not same_bot:
         threading.Thread(target=telegram_bot.start_polling, daemon=True).start()
     if quiz_bot.bot:
         threading.Thread(target=quiz_bot.start_polling, daemon=True).start()

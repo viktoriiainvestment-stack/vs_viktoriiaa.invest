@@ -113,6 +113,11 @@ if bot:
         bot.send_message(chat_id, qd.INTRO_TEXT)
         _send_question(chat_id, qd.Q_REGION)
 
+    @bot.message_handler(commands=["id"])
+    def handle_id(message):
+        # Дозволяє адміну дізнатись свій chat_id для ADMIN_TELEGRAM_CHAT_ID.
+        bot.send_message(message.chat.id, f"Ваш chat_id: {message.chat.id}")
+
     @bot.callback_query_handler(func=lambda c: True)
     def handle_answer(call):
         chat_id = call.message.chat.id
