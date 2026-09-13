@@ -336,6 +336,9 @@
   @media (max-width:640px){
     .column{flex-basis:82vw;}
     .field-row{grid-template-columns:1fr;}
+    /* iOS Safari авто-зумить сторінку при фокусі на полі з font-size < 16px
+       і сам назад не зменшує — тому на мобільному піднімаємо до 16px. */
+    .field input, .field select, .field textarea, .search input{font-size:16px;}
   }
 </style>
 </head>
