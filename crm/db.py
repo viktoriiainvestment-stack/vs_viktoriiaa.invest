@@ -4,59 +4,53 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "crm.db"
 
-STAGES = ["cold", "qualification", "qualified", "investor", "client"]
+STAGES = ["cold", "qualification", "qualified", "investor", "client", "inactive"]
 
+# camelCase throughout, on purpose: these are the exact keys the dashboard's
+# JS (ported from the Liika artifact) already reads and writes, so the API
+# needs no translation layer between frontend and SQLite.
 FIELDS = [
-    "name", "phone", "stage", "source", "prev_contact", "portrait",
-    "diagnosis", "offer", "proposal", "decision", "deal_info", "notes",
-    "external_id", "next_action", "next_action_at",
+    "name", "phone", "stage", "channel", "leadSource", "assignee",
+    "prevContact", "portrait", "diagnosis", "offer", "proposal", "decision",
+    "dealInfo", "dealDate", "commission", "notes", "externalId",
+    "nextAction", "nextActionAt", "nextActionTime", "sortOrder",
 ]
 
 
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def _column_def(field):
+    if field == "sortOrder":
+        return f"{field} INTEGER DEFAULT 0"
+    return f"{field} TEXT DEFAULT ''"
 
 
 def init_db():
     conn = get_conn()
+    columns = ",\n            ".join(_column_def(f) for f in FIELDS)
     conn.execute(
-        """
+        f"""
         CREATE TABLE IF NOT EXISTS leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT DEFAULT '',
-            phone TEXT DEFAULT '',
-            stage TEXT NOT NULL DEFAULT 'cold',
-            source TEXT DEFAULT 'manual',
-            prev_contact TEXT DEFAULT '',
-            portrait TEXT DEFAULT '',
-            diagnosis TEXT DEFAULT '',
-            offer TEXT DEFAULT '',
-            proposal TEXT DEFAULT '',
-            decision TEXT DEFAULT '',
-            deal_info TEXT DEFAULT '',
-            notes TEXT DEFAULT '',
-            external_id TEXT DEFAULT '',
-            next_action TEXT DEFAULT '',
-            next_action_at TEXT DEFAULT '',
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            {columns},
+            createdAt TEXT NOT NULL,
+            updatedAt TEXT NOT NULL
         )
         """
     )
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_leads_external_id ON leads(external_id)"
-    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_leads_channel_external ON leads(channel, externalId)")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS scripts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             text TEXT NOT NULL DEFAULT '',
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            createdAt TEXT NOT NULL,
+            updatedAt TEXT NOT NULL
         )
         """
     )
@@ -82,13 +76,13 @@ def get_lead(lead_id):
     return dict(row) if row else None
 
 
-def find_by_external_id(source, external_id):
+def find_by_channel(channel, external_id):
     if not external_id:
         return None
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM leads WHERE source = ? AND external_id = ?",
-        (source, external_id),
+        "SELECT * FROM leads WHERE channel = ? AND externalId = ?",
+        (channel, external_id),
     ).fetchone()
     conn.close()
     return dict(row) if row else None
@@ -97,10 +91,10 @@ def find_by_external_id(source, external_id):
 def create_lead(data):
     conn = get_conn()
     now = _now()
-    values = {f: data.get(f, "") for f in FIELDS}
+    values = {f: data.get(f, 0 if f == "sortOrder" else "") for f in FIELDS}
     values["stage"] = values["stage"] or "cold"
     cur = conn.execute(
-        f"""INSERT INTO leads ({', '.join(FIELDS)}, created_at, updated_at)
+        f"""INSERT INTO leads ({', '.join(FIELDS)}, createdAt, updatedAt)
             VALUES ({', '.join('?' for _ in FIELDS)}, ?, ?)""",
         [*values.values(), now, now],
     )
@@ -119,7 +113,7 @@ def update_lead(lead_id, data):
     set_clause = ", ".join(f"{f} = ?" for f in fields)
     values = [data[f] for f in fields]
     conn.execute(
-        f"UPDATE leads SET {set_clause}, updated_at = ? WHERE id = ?",
+        f"UPDATE leads SET {set_clause}, updatedAt = ? WHERE id = ?",
         [*values, _now(), lead_id],
     )
     conn.commit()
@@ -135,12 +129,12 @@ def delete_lead(lead_id):
 
 
 def leads_with_tasks_due(on_or_before):
-    """Leads whose next_action_at is set and <= on_or_before (YYYY-MM-DD)."""
+    """Leads whose nextActionAt is set and <= on_or_before (YYYY-MM-DD)."""
     conn = get_conn()
     rows = conn.execute(
         """SELECT * FROM leads
-           WHERE next_action_at != '' AND next_action_at <= ?
-           ORDER BY next_action_at""",
+           WHERE nextActionAt != '' AND nextActionAt <= ?
+           ORDER BY nextActionAt""",
         (on_or_before,),
     ).fetchall()
     conn.close()
@@ -158,19 +152,19 @@ def create_script(title, text):
     conn = get_conn()
     now = _now()
     cur = conn.execute(
-        "INSERT INTO scripts (title, text, created_at, updated_at) VALUES (?, ?, ?, ?)",
+        "INSERT INTO scripts (title, text, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
         (title, text, now, now),
     )
     conn.commit()
     script_id = cur.lastrowid
     conn.close()
-    return {"id": script_id, "title": title, "text": text, "created_at": now, "updated_at": now}
+    return {"id": script_id, "title": title, "text": text, "createdAt": now, "updatedAt": now}
 
 
 def update_script(script_id, title, text):
     conn = get_conn()
     conn.execute(
-        "UPDATE scripts SET title = ?, text = ?, updated_at = ? WHERE id = ?",
+        "UPDATE scripts SET title = ?, text = ?, updatedAt = ? WHERE id = ?",
         (title, text, _now(), script_id),
     )
     conn.commit()

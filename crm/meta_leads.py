@@ -13,7 +13,7 @@ import os
 
 import requests
 
-from db import find_by_external_id, create_lead
+from db import find_by_channel, create_lead
 from notifications import notify_admin
 
 META_APP_SECRET = os.environ.get("META_APP_SECRET")
@@ -67,7 +67,7 @@ def handle_leadgen_change(value):
     leadgen_id = value.get("leadgen_id")
     if not leadgen_id:
         return
-    if find_by_external_id("facebook", str(leadgen_id)):
+    if find_by_channel("facebook", str(leadgen_id)):
         return  # Meta redelivers webhooks on retry; don't duplicate the lead.
 
     data = fetch_lead_fields(leadgen_id)
@@ -87,8 +87,8 @@ def handle_leadgen_change(value):
         "name": name,
         "phone": phone,
         "stage": "cold",
-        "source": "facebook",
-        "external_id": str(leadgen_id),
+        "channel": "facebook",
+        "externalId": str(leadgen_id),
         "portrait": "\n".join(portrait_lines),
         "notes": "Заявка з Facebook/Instagram Lead Ads",
     })

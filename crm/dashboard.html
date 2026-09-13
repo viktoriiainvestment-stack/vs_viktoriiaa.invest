@@ -5,125 +5,338 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Лійка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <style>
   :root{
-    --bg:#F7F2E7; --surface:#FFFFFF; --surface-soft:#F1EADA;
-    --ink:#241C11; --ink-soft:#7A7061; --ink-faint:#A79C89; --line:#E6DCC6;
-    --accent:#DB9A34; --accent-ink:#382508; --accent-soft:#F3DDAF; --danger:#B34A3E;
-    --stage-cold:#8B8371; --stage-qualification:#B97D3A; --stage-qualified:#3F7D5C;
-    --stage-investor:#8A4F9E; --stage-client:#2F6FA8;
-    --shadow: 0 1px 2px rgba(36,28,17,.06), 0 8px 24px -12px rgba(36,28,17,.18);
+    --bg:#EEF2FB;
+    --surface:#FFFFFF;
+    --surface-soft:#F5F7FD;
+    --ink:#1A2340;
+    --ink-soft:#6B7590;
+    --ink-faint:#A6AFC7;
+    --line:#E3E8F7;
+    --accent:#4C6FFF;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E4E9FF;
+    --danger:#E2574C;
+    --good:#22B378;
+    --stage-cold:#8891AC;
+    --stage-qualification:#E2A33D;
+    --stage-qualified:#22B378;
+    --stage-investor:#8B5FE0;
+    --stage-client:#17A6B0;
+    --glow-a: rgba(76,111,255,.14);
+    --glow-b: rgba(76,111,255,.10);
+    --shadow: 0 1px 2px rgba(30,45,110,.06), 0 14px 28px -16px rgba(30,45,110,.22);
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --bg:#1B1712; --surface:#242019; --surface-soft:#2C271E;
-      --ink:#F3ECDC; --ink-soft:#B3A791; --ink-faint:#7C7261; --line:#3C352A;
-      --accent:#E8A94A; --accent-ink:#241804; --accent-soft:#4A3A1C; --danger:#E08476;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      --bg:#0E1526;
+      --surface:#161F38;
+      --surface-soft:#1B2542;
+      --ink:#EAF0FF;
+      --ink-soft:#98A3C6;
+      --ink-faint:#5E6890;
+      --line:#2A3459;
+      --accent:#6B87FF;
+      --accent-ink:#0B1020;
+      --accent-soft:#22305C;
+      --danger:#F0776C;
+      --good:#3FD09A;
+      --glow-a: rgba(107,135,255,.20);
+      --glow-b: rgba(107,135,255,.13);
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 18px 34px -18px rgba(0,0,0,.6);
     }
   }
   :root[data-theme="dark"]{
-    --bg:#1B1712; --surface:#242019; --surface-soft:#2C271E;
-    --ink:#F3ECDC; --ink-soft:#B3A791; --ink-faint:#7C7261; --line:#3C352A;
-    --accent:#E8A94A; --accent-ink:#241804; --accent-soft:#4A3A1C; --danger:#E08476;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    --bg:#0E1526;
+    --surface:#161F38;
+    --surface-soft:#1B2542;
+    --ink:#EAF0FF;
+    --ink-soft:#98A3C6;
+    --ink-faint:#5E6890;
+    --line:#2A3459;
+    --accent:#6B87FF;
+    --accent-ink:#0B1020;
+    --accent-soft:#22305C;
+    --danger:#F0776C;
+    --good:#3FD09A;
+    --glow-a: rgba(107,135,255,.20);
+    --glow-b: rgba(107,135,255,.13);
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 18px 34px -18px rgba(0,0,0,.6);
   }
+
   *{box-sizing:border-box;}
-  body{background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,-apple-system,sans-serif;
-    padding:0 clamp(16px,3vw,32px); padding-block:20px 40px; margin:0;}
-  h1,h2,h3{font-family:'Fraunces',Georgia,serif; margin:0;}
+  body{
+    background:
+      radial-gradient(640px 420px at 88% -8%, var(--glow-a), transparent 60%),
+      radial-gradient(520px 360px at -8% 28%, var(--glow-b), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    padding:0 clamp(16px,3vw,32px);
+    padding-block:20px 40px;
+  }
+  h1,h2,h3{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif; text-wrap:balance; margin:0;}
+  a{color:inherit;}
   button{font-family:inherit;}
+
   .app{max-width:1400px; margin:0 auto; display:flex; flex-direction:column; gap:18px;}
-  .topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+
+  .topbar{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
   .brand{display:flex; flex-direction:column; gap:2px;}
-  .brand h1{font-size:clamp(24px,3vw,32px); font-weight:600;}
+  .brand h1{font-size:clamp(24px,3vw,32px); font-weight:700; letter-spacing:-.02em;}
   .brand p{margin:0; color:var(--ink-soft); font-size:13.5px;}
-  .brand .mark{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
-    border-radius:9px; background:var(--accent); color:var(--accent-ink); font-family:'Fraunces',serif;
-    font-weight:700; font-size:15px; margin-right:8px; vertical-align:-6px;}
+  .brand .mark{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:10px; background:var(--accent);
+    color:var(--accent-ink); font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:15px;
+    margin-right:8px; vertical-align:-6px; box-shadow:0 6px 14px -6px var(--glow-a);
+  }
   .topbar-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-  .search{display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
-    border-radius:10px; padding:8px 12px; min-width:220px;}
-  .search input{border:none; outline:none; background:transparent; color:var(--ink); font-size:14px; width:100%;}
+  .search{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line); border-radius:999px;
+    padding:9px 15px; min-width:220px; box-shadow:var(--shadow);
+  }
+  .search input{
+    border:none; outline:none; background:transparent; color:var(--ink);
+    font-size:14px; width:100%;
+  }
   .search input::placeholder{color:var(--ink-faint);}
   .search svg{flex:none; color:var(--ink-faint);}
-  .btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface);
-    color:var(--ink); padding:9px 14px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    padding:9px 16px; border-radius:999px; font-size:14px; font-weight:600;
+    cursor:pointer; white-space:nowrap; box-shadow:var(--shadow);
+  }
   .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink);}
-  .btn.danger{color:var(--danger); border-color:var(--danger);}
-  .btn.small{padding:5px 9px; font-size:12.5px; border-radius:8px;}
-  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;}
-  .stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px;
-    display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow);}
+  .btn.ghost{background:transparent; box-shadow:none;}
+  .btn.danger{color:var(--danger); border-color:var(--danger); background:var(--surface);}
+  .btn.small{padding:6px 12px; font-size:12.5px;}
+  .btn[disabled]{opacity:.4; cursor:default;}
+
+  .stats{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;
+  }
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:14px 16px; display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow);
+  }
   .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600;}
-  .stat .value{font-family:'Fraunces',serif; font-size:24px; font-weight:600; font-variant-numeric:tabular-nums;}
-  .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
-  .board{display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;}
-  .column{flex:0 0 288px; background:var(--surface-soft); border:1px solid var(--line); border-radius:14px;
-    display:flex; flex-direction:column; max-height:calc(100vh - 210px); min-height:220px;}
-  .column-head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 10px;
-    border-bottom:1px solid var(--line);}
-  .column-head .title{display:flex; align-items:center; gap:8px; font-weight:600; font-size:13.5px;}
-  .column-head .count{font-size:11.5px; color:var(--ink-soft); background:var(--surface); border:1px solid var(--line);
-    border-radius:999px; padding:1px 8px; font-variant-numeric:tabular-nums;}
-  .column-body{padding:10px; display:flex; flex-direction:column; gap:8px; overflow-y:auto;}
-  .column-empty{color:var(--ink-faint); font-size:12.5px; text-align:center; padding:18px 8px;
-    border:1px dashed var(--line); border-radius:10px;}
-  .card{background:var(--surface); border:1px solid var(--line); border-left-width:3px; border-radius:11px;
-    padding:10px 11px; cursor:pointer; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;}
+  .stat .value{font-family:'Plus Jakarta Sans',sans-serif; font-size:25px; font-weight:700; font-variant-numeric:tabular-nums;}
+  .stat .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+
+  .task-banner{
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:16px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .task-banner h3{font-size:13.5px; font-weight:700; color:var(--ink);}
+  .task-row{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; padding:7px 0;
+    font-size:13px; cursor:pointer; border-top:1px solid rgba(26,35,64,.08);
+  }
+  .task-row:first-of-type{border-top:none;}
+  .task-row .who{font-weight:700; color:var(--ink);}
+  .task-row .what{color:var(--ink-soft);}
+  .task-row .when{color:var(--ink-soft); font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:600;}
+  .task-row.overdue .when{color:var(--danger);}
+
+  .board{
+    display:flex; gap:14px; overflow-x:auto; padding-bottom:8px; align-items:flex-start;
+    scroll-snap-type:x proximity;
+  }
+  .column{
+    flex:0 0 288px; scroll-snap-align:start;
+    background:var(--surface-soft); border:1px solid var(--line); border-radius:20px;
+    display:flex; flex-direction:column; max-height:calc(100vh - 210px); min-height:220px;
+    transition:border-color .12s, background .12s;
+  }
+  .column.drag-over{border-color:var(--accent); background:var(--accent-soft);}
+  .column-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:14px 14px 11px; border-bottom:1px solid var(--line);
+  }
+  .column-head .title{display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px;}
+  .column-head .count{
+    font-size:11.5px; color:var(--ink-soft); background:var(--surface);
+    border:1px solid var(--line); border-radius:999px; padding:1px 9px; font-variant-numeric:tabular-nums;
+  }
+  .column-body{padding:11px; display:flex; flex-direction:column; gap:9px; overflow-y:auto; flex:1;}
+  .column-empty{
+    color:var(--ink-faint); font-size:12.5px; text-align:center; padding:18px 8px;
+    border:1px dashed var(--line); border-radius:12px;
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-left-width:3px;
+    border-radius:14px; padding:11px 12px; cursor:grab; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:6px;
+  }
   .card:hover{border-color:var(--accent);}
-  .card .name{font-family:'Fraunces',serif; font-weight:600; font-size:14.5px; line-height:1.25;}
+  .card.dragging{opacity:.4;}
+  .card .name{font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:14.5px; line-height:1.25;}
   .card .phone{font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
-  .card .snippet{font-size:12.5px; color:var(--ink-soft); line-height:1.4; display:-webkit-box;
-    -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .card .snippet{font-size:12.5px; color:var(--ink-soft); line-height:1.4;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .card .task-pill{
+    font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; width:fit-content;
+    background:var(--danger); color:#fff;
+  }
+  .card .task-pill.soon{background:var(--stage-qualification);}
   .badges{display:flex; gap:5px; flex-wrap:wrap;}
-  .badge{font-size:11px; font-weight:600; padding:2px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent-ink);}
+  .badge{
+    font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
+    background:var(--accent-soft); color:var(--accent); }
   .badge.outline{background:transparent; border:1px solid var(--line); color:var(--ink-soft);}
-  .badge.channel{background:transparent; border:1px solid var(--stage-qualified); color:var(--stage-qualified);}
   .card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:2px;}
   .stepper{display:flex; gap:4px;}
-  .stepper button{width:22px; height:22px; border-radius:6px; border:1px solid var(--line); background:var(--surface);
-    color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px;}
-  .stepper button:hover{color:var(--ink); border-color:var(--accent);}
+  .stepper button{
+    width:23px; height:23px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px;
+  }
+  .stepper button:hover{color:var(--accent); border-color:var(--accent);}
   .stepper button:disabled{opacity:.3; cursor:default;}
-  .task-banner{background:var(--accent-soft); border:1px solid var(--accent); border-radius:12px; padding:12px 14px;}
-  .task-banner h3{font-size:14px; font-weight:600; margin-bottom:8px;}
-  .task-row{display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:13px; cursor:pointer;
-    border-top:1px solid rgba(0,0,0,.06);}
-  .task-row:first-of-type{border-top:none;}
-  .task-row .who{font-weight:600;}
-  .task-row .when{color:var(--ink-soft); font-variant-numeric:tabular-nums;}
-  .scrim{position:fixed; inset:0; background:rgba(20,15,6,.32); z-index:20;}
-  .drawer{position:fixed; top:0; right:0; height:100%; width:min(440px,100%); background:var(--surface);
-    border-left:1px solid var(--line); z-index:21; display:flex; flex-direction:column;
-    box-shadow:-16px 0 40px -20px rgba(0,0,0,.35);}
-  .drawer-head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:16px 18px;
-    border-bottom:1px solid var(--line);}
-  .drawer-head h2{font-size:18px; font-weight:600;}
-  .drawer-body{padding:16px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:1;}
-  .drawer-foot{padding:14px 18px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:8px;}
+  .stepper button:disabled:hover{color:var(--ink-soft); border-color:var(--line);}
+  .card-chat{display:flex; gap:3px;}
+  .card-chat a{
+    width:23px; height:23px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; font-size:12px; text-decoration:none;
+  }
+  .card-chat a:hover{border-color:var(--accent);}
+
+  .scrim{position:fixed; inset:0; background:rgba(14,21,38,.38); backdrop-filter:blur(2px); z-index:20;}
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:min(440px,100%);
+    background:var(--surface); border-left:1px solid var(--line); z-index:21;
+    display:flex; flex-direction:column; box-shadow:-20px 0 44px -20px rgba(20,30,70,.35);
+  }
+  .drawer-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:18px 20px; border-bottom:1px solid var(--line);
+  }
+  .drawer-head h2{font-size:18px; font-weight:700;}
+  .drawer-body{padding:18px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:1;}
+  .drawer-foot{padding:16px 20px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:8px;}
   .field{display:flex; flex-direction:column; gap:5px;}
   .field label{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
-  .field input, .field select, .field textarea{border:1px solid var(--line); border-radius:9px; padding:9px 10px;
-    font-size:14px; background:var(--bg); color:var(--ink); font-family:inherit; resize:vertical;}
+  .field input, .field select, .field textarea{
+    border:1px solid var(--line); border-radius:11px; padding:9px 12px; font-size:14px;
+    background:var(--surface-soft); color:var(--ink); font-family:inherit; resize:vertical;
+  }
   .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
   .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-  .close-x{border:none; background:transparent; color:var(--ink-soft); cursor:pointer; width:30px; height:30px;
-    border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;}
+  .dup-warning{
+    font-size:12.5px; font-weight:600; color:var(--danger); background:color-mix(in srgb, var(--danger) 12%, transparent);
+    border:1px solid var(--danger); border-radius:10px; padding:8px 12px; cursor:pointer;
+  }
+  .assignee-tag{font-size:11px; color:var(--ink-soft); font-weight:600;}
+
+  .funnel{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:14px 16px; margin-bottom:14px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .funnel-row{display:flex; align-items:center; gap:10px;}
+  .funnel-label{width:118px; flex:none; font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .funnel-track{flex:1; background:var(--surface-soft); border-radius:8px; height:26px; overflow:hidden;}
+  .funnel-fill{
+    height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px;
+    color:#fff; font-weight:700; font-size:12px; white-space:nowrap; min-width:26px;
+    transition:width .2s;
+  }
+  .funnel-pct{width:48px; flex:none; text-align:right; font-size:11.5px; color:var(--ink-faint); font-variant-numeric:tabular-nums;}
+  .close-x{
+    border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
+    width:30px; height:30px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
   .close-x:hover{background:var(--surface-soft); color:var(--ink);}
-  .send-box{border:1px solid var(--line); border-radius:11px; padding:12px; display:flex; flex-direction:column; gap:8px; background:var(--surface-soft);}
-  .send-box h3{font-size:13px; font-weight:600;}
-  .send-box .muted{font-size:12.5px; color:var(--ink-soft);}
-  .script-item{border:1px solid var(--line); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px; background:var(--surface);}
-  .script-item .title{font-weight:600; font-size:13.5px;}
+
+  .quick-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .quick-actions a, .quick-actions button{
+    display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+    border:1px solid var(--line); background:var(--surface-soft); color:var(--ink);
+    padding:7px 13px; border-radius:999px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .quick-actions a:hover, .quick-actions button:hover{border-color:var(--accent); color:var(--accent);}
+  .quick-actions a.disabled, .quick-actions button.disabled{opacity:.45; pointer-events:none; cursor:default;}
+  .quick-actions a.disabled:hover, .quick-actions button.disabled:hover{border-color:var(--line); color:var(--ink);}
+
+  .box{
+    border:1px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column;
+    gap:8px; background:var(--surface-soft);
+  }
+  .box h3{font-size:13px; font-weight:700;}
+  .box .muted{font-size:12px; color:var(--ink-soft);}
+  .note-add-row{display:flex; gap:6px;}
+  .note-add-row input{flex:1;}
+
+  .script-item{
+    border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; flex-direction:column;
+    gap:6px; background:var(--surface);
+  }
+  .script-item .title{font-weight:700; font-size:13.5px;}
   .script-item .text{font-size:12.5px; color:var(--ink-soft); white-space:pre-wrap;}
-  .script-item .row{display:flex; gap:6px; justify-content:flex-end;}
-  .banner{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px;
-    font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;}
+  .script-item .row{display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;}
+
+  .banner{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:11px 16px; font-size:13px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;
+  }
+
+  .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px; box-shadow:var(--shadow);}
+  .tab-btn{
+    border:none; background:transparent; color:var(--ink-soft); padding:7px 16px; border-radius:999px;
+    font-size:13.5px; font-weight:600; cursor:pointer;
+  }
+  .tab-btn.active{background:var(--accent); color:var(--accent-ink);}
+
+  .filters-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .filters-row label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .filters-row select{
+    border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    border-radius:999px; padding:7px 14px; font-size:13px; font-family:inherit; cursor:pointer;
+  }
+
+  .section-label{
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--accent); display:flex; align-items:center; gap:6px;
+    margin-top:6px; padding-top:16px; border-top:1px solid var(--line);
+  }
+  .section-label:first-child{border-top:none; padding-top:0; margin-top:0;}
+
+  .tasks-list{display:flex; flex-direction:column; gap:8px;}
+  .task-list-row{
+    display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; padding:12px 14px; cursor:pointer; box-shadow:var(--shadow); flex-wrap:wrap;
+  }
+  .task-list-row:hover{border-color:var(--accent);}
+  .task-list-row.overdue{border-left:3px solid var(--danger);}
+  .task-list-row .twho{font-weight:700; font-family:'Plus Jakarta Sans',sans-serif; min-width:160px;}
+  .task-list-row .twhat{color:var(--ink-soft); font-size:13px; flex:1; min-width:140px;}
+  .task-list-row .twhen{font-variant-numeric:tabular-nums; font-size:12.5px; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
+  .task-list-row.overdue .twhen{color:var(--danger);}
+  .empty-state{
+    color:var(--ink-faint); font-size:13px; text-align:center; padding:40px 20px;
+    border:1px dashed var(--line); border-radius:16px;
+  }
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:30;
+    background:var(--ink); color:var(--bg); padding:9px 18px; border-radius:999px; font-size:13px;
+    font-weight:600; box-shadow:var(--shadow);
+  }
   [hidden]{display:none!important;}
-  @media (max-width:640px){ .column{flex-basis:82vw;} .field-row{grid-template-columns:1fr;} }
+
+  @media (max-width:640px){
+    .column{flex-basis:82vw;}
+    .field-row{grid-template-columns:1fr;}
+  }
 </style>
 </head>
 <body>
@@ -132,14 +345,25 @@
   <header class="topbar">
     <div class="brand">
       <h1><span class="mark">Л</span>Лійка</h1>
-      <p>Воронка лідів · Telegram · Viber</p>
+      <p>Воронка лідів · інвестиційна нерухомість</p>
     </div>
     <div class="topbar-actions">
+      <div class="tabs">
+        <button class="tab-btn active" id="tabBoardBtn" type="button">Воронка</button>
+        <button class="tab-btn" id="tabTasksBtn" type="button">Задачі</button>
+        <button class="tab-btn" id="tabDealsBtn" type="button">Угоди</button>
+        <button class="tab-btn" id="tabInactiveBtn" type="button">Не актуально</button>
+      </div>
+      <div class="filters-row" title="Фільтр за місяцем, коли лід зайшов у CRM — діє на всі вкладки">
+        <label for="entryMonthFilter">Місяць:</label>
+        <select id="entryMonthFilter"><option value="">Усі місяці</option></select>
+      </div>
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
       </div>
       <button class="btn" id="scriptsBtn">📜 Скрипти</button>
+      <button class="btn" id="exportBtn">⬇️ Експорт CSV</button>
       <button class="btn primary" id="addLeadBtn">+ Новий лід</button>
     </div>
   </header>
@@ -151,34 +375,94 @@
   </div>
 
   <section class="stats" id="stats"></section>
-  <main class="board" id="board"></main>
+
+  <div id="boardView">
+    <div class="funnel" id="funnelChart"></div>
+    <main class="board" id="board"></main>
+  </div>
+
+  <div id="tasksView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <label for="taskMonthFilter">Місяць:</label>
+      <select id="taskMonthFilter"><option value="">Усі місяці</option></select>
+    </div>
+    <div class="tasks-list" id="tasksList"></div>
+  </div>
+
+  <div id="dealsView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <label for="dealMonthFilter">Місяць угоди:</label>
+      <select id="dealMonthFilter"><option value="">Усі місяці</option></select>
+    </div>
+    <div class="tasks-list" id="dealsList"></div>
+  </div>
+
+  <div id="inactiveView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <span class="muted">Ліди зі статусом «Не актуально». Раз на 6 місяців кожному автоматично ставиться нагадування зв'язатись знову — воно зʼявиться у «Задачах».</span>
+    </div>
+    <div class="tasks-list" id="inactiveList"></div>
+  </div>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
-
 <aside class="drawer" id="drawer" hidden>
   <div class="drawer-head">
     <h2 id="drawerTitle">Новий лід</h2>
     <button class="close-x" id="closeDrawer" aria-label="Закрити">✕</button>
   </div>
   <div class="drawer-body">
+    <div class="section-label">🎯 Основне</div>
     <div class="field-row">
       <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
-      <div class="field"><label for="f-phone">Телефон / контакт</label><input id="f-phone" type="text" placeholder="+380…"></div>
+      <div class="field">
+        <label for="f-phone">Телефон / контакт</label>
+        <input id="f-phone" type="text" placeholder="+380…">
+      </div>
     </div>
+    <div class="dup-warning" id="dupWarning" hidden></div>
+    <div class="quick-actions" id="quickActions"></div>
     <div class="field-row">
       <div class="field">
         <label for="f-stage">Стадія</label>
         <select id="f-stage">
-          <option value="cold">Холодна база</option>
+          <option value="cold">Нові ліди</option>
           <option value="qualification">Кваліфікація</option>
           <option value="qualified">Якісний лід</option>
           <option value="investor">Інвестор · Оффер</option>
           <option value="client">Клієнт</option>
+          <option value="inactive">Не актуально</option>
         </select>
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
     </div>
+    <div class="field-row">
+      <div class="field"><label for="f-source">Джерело</label><input id="f-source" type="text" placeholder="Рекомендація, реклама, сайт…"></div>
+      <div class="field"><label for="f-assignee">Відповідальний</label><input id="f-assignee" type="text" placeholder="Хто веде ліда"></div>
+    </div>
+
+    <div class="section-label">📅 Наступний крок</div>
+    <div class="field"><label for="f-next">Завдання</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
+    <div class="field-row">
+      <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
+      <div class="field"><label for="f-next-time">Час</label><input id="f-next-time" type="time"></div>
+    </div>
+    <div class="quick-actions">
+      <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
+      <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть завдання, дату і час, збережіть лід — з'явиться кнопка</span>
+    </div>
+
+    <div class="section-label">💬 Написати ліду</div>
+    <div class="box" id="sendBox" hidden>
+      <div class="muted" id="sendChannelHint">Обираєте скрипт → «Надіслати» відкриє Telegram із готовим текстом — лишиться натиснути «Надіслати» вже там.</div>
+      <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
+      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
+      <div class="quick-actions">
+        <button type="button" id="sendTelegramLink" class="disabled">✈️ Надіслати</button>
+      </div>
+    </div>
+
+    <div class="section-label">📋 Деталі</div>
     <div class="field"><label for="f-prev">Попередній контакт</label><input id="f-prev" type="text" placeholder="Дата / нотатка"></div>
     <div class="field"><label for="f-portrait">Портрет клієнта</label><textarea id="f-portrait" rows="3" placeholder="Хто це, що цікавить, бюджет…"></textarea></div>
     <div class="field-row">
@@ -188,17 +472,18 @@
     <div class="field"><label for="f-proposal">Пропозиція / заперечення</label><textarea id="f-proposal" rows="2"></textarea></div>
     <div class="field"><label for="f-deal">Деталі угоди</label><textarea id="f-deal" rows="2" placeholder="Сума, юніт, умови…"></textarea></div>
     <div class="field-row">
-      <div class="field"><label for="f-next">Наступний крок</label><input id="f-next" type="text" placeholder="Передзвонити, надіслати оффер…"></div>
-      <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
+      <div class="field"><label for="f-deal-date">Дата угоди</label><input id="f-deal-date" type="date"></div>
+      <div class="field"><label for="f-commission">Комісія з угоди</label><input id="f-commission" type="text" placeholder="напр. 850$"></div>
     </div>
-    <div class="field"><label for="f-notes">Нотатки / історія</label><textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea></div>
 
-    <div class="send-box" id="sendBox">
-      <h3>Надіслати повідомлення</h3>
-      <div class="muted" id="sendChannelNote"></div>
-      <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
-      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
-      <button class="btn primary small" id="sendBtn" style="align-self:flex-start;">Надіслати</button>
+    <div class="section-label">🗒 Нотатки</div>
+    <div class="field">
+      <label for="f-notes">Історія</label>
+      <textarea id="f-notes" rows="3" placeholder="Хронологія дзвінків, наступні кроки…"></textarea>
+      <div class="note-add-row">
+        <input id="quickNote" type="text" placeholder="Швидка нотатка з датою…">
+        <button class="btn small" id="addNoteBtn">+ Додати</button>
+      </div>
     </div>
   </div>
   <div class="drawer-foot">
@@ -220,18 +505,30 @@
   </div>
 </aside>
 
+<div id="toast" class="toast" hidden></div>
+
 <script>
 (function(){
-  const STAGES = [
-    {key:'cold', label:'Холодна база', color:'var(--stage-cold)'},
+  // Логічний порядок лійки (для степера й переходів між стадіями):
+  // нові -> кваліфікація -> якісний лід -> інвестор -> клієнт.
+  const ALL_STAGES = [
+    {key:'cold', label:'Нові ліди', color:'var(--stage-cold)'},
     {key:'qualification', label:'Кваліфікація', color:'var(--stage-qualification)'},
     {key:'qualified', label:'Якісний лід', color:'var(--stage-qualified)'},
     {key:'investor', label:'Інвестор · Оффер', color:'var(--stage-investor)'},
     {key:'client', label:'Клієнт', color:'var(--stage-client)'},
   ];
-  const stageIndex = k => STAGES.findIndex(s=>s.key===k);
+  // На дошці лишаються тільки перші три стадії — інвестор і клієнт
+  // живуть окремо, у вкладці «Угоди».
+  const BOARD_STAGES = ALL_STAGES.slice(0, 3);
+  const DEAL_STAGE_KEYS = ['investor', 'client'];
   const CHANNEL_LABEL = {telegram:'Telegram', viber:'Viber', facebook:'Facebook Ads'};
-  const SENDABLE_CHANNELS = {telegram:'Telegram', viber:'Viber'};
+  // «Не актуально» — поза лійкою: не бере участі у степері/drag&drop,
+  // ставиться тільки вручну через картку ліда.
+  const INACTIVE_STAGE = {key:'inactive', label:'Не актуально', color:'var(--ink-faint)'};
+  const REENGAGE_MONTHS = 6;
+  const stageIndex = k => ALL_STAGES.findIndex(s=>s.key===k);
+  const stageLabel = k => ALL_STAGES.find(s=>s.key===k)?.label || (k===INACTIVE_STAGE.key ? INACTIVE_STAGE.label : k);
 
   const boardEl = document.getElementById('board');
   const statsEl = document.getElementById('stats');
@@ -242,18 +539,37 @@
   const drawer = document.getElementById('drawer');
   const scriptsDrawer = document.getElementById('scriptsDrawer');
   const scrim = document.getElementById('scrim');
+  const toastEl = document.getElementById('toast');
+  const boardView = document.getElementById('boardView');
+  const tasksView = document.getElementById('tasksView');
+  const dealsView = document.getElementById('dealsView');
+  const inactiveView = document.getElementById('inactiveView');
+  const tasksListEl = document.getElementById('tasksList');
+  const dealsListEl = document.getElementById('dealsList');
+  const inactiveListEl = document.getElementById('inactiveList');
+  const taskMonthFilterEl = document.getElementById('taskMonthFilter');
+  const dealMonthFilterEl = document.getElementById('dealMonthFilter');
+  const tabBoardBtn = document.getElementById('tabBoardBtn');
+  const tabTasksBtn = document.getElementById('tabTasksBtn');
+  const tabDealsBtn = document.getElementById('tabDealsBtn');
+  const tabInactiveBtn = document.getElementById('tabInactiveBtn');
+  const entryMonthFilterEl = document.getElementById('entryMonthFilter');
+  const funnelEl = document.getElementById('funnelChart');
 
   let leads = [];
   let scripts = [];
+  let leadsCol = null;
+  let scriptsCol = null;
   let editingId = null;
   let query = '';
+  let toastTimer = null;
   let token = localStorage.getItem('liika_token') || '';
 
   function esc(s){
     return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  async function api(path, opts={}){
+  async function apiFetch(path, opts={}){
     const res = await fetch(path, {
       ...opts,
       headers: {
@@ -275,7 +591,7 @@
   }
 
   function promptLogin(){
-    const t = window.prompt('Токен адміністратора:');
+    const t = window.prompt('Токен адміністратора (ADMIN_TOKEN):');
     if(t){
       token = t.trim();
       localStorage.setItem('liika_token', token);
@@ -283,28 +599,89 @@
     }
   }
 
-  function parseDealValue(text){
+  function toast(text){
+    toastEl.textContent = text;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ toastEl.hidden = true; }, 2200);
+  }
+
+  function digitsOnly(phone){
+    return (phone||'').replace(/[^\d]/g, '');
+  }
+
+  function intlPhone(phone){
+    const digits = digitsOnly(phone);
+    if(!digits) return '';
+    return digits.startsWith('0') ? '38' + digits : digits;
+  }
+
+  function checkDuplicate(){
+    const warnEl = document.getElementById('dupWarning');
+    const intl = intlPhone(document.getElementById('f-phone').value);
+    if(!intl){ warnEl.hidden = true; return; }
+    const match = leads.find(l => l.id !== editingId && intlPhone(l.phone) === intl);
+    if(!match){ warnEl.hidden = true; return; }
+    warnEl.hidden = false;
+    warnEl.textContent = `⚠️ Такий номер уже є: ${match.name || match.phone} (${stageLabel(match.stage)}) — тиснути, щоб відкрити`;
+    warnEl.onclick = () => openDrawer(match);
+  }
+
+  function todayStr(){
+    return new Date().toISOString().slice(0,10);
+  }
+
+  function parseCommission(text){
     if(!text) return 0;
     let sum = 0;
-    const re = /(\d+(?:[.,]\d+)?)\s*(к\$|тис\$|k\$)/gi;
+    const re = /(\d+(?:[.,]\d+)?)/g;
     let m;
-    while((m = re.exec(text))) sum += parseFloat(m[1].replace(',', '.'));
+    while((m = re.exec(text))){
+      sum += parseFloat(m[1].replace(',', '.'));
+    }
     return sum;
   }
 
+  const MONTH_NAMES = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+  function monthLabel(ym){
+    const [y,m] = ym.split('-');
+    return MONTH_NAMES[parseInt(m,10)-1] + ' ' + y;
+  }
+  function monthOf(ts){
+    return ts ? new Date(ts).toISOString().slice(0,7) : '';
+  }
+
+  // Когорта за місяцем надходження ліда (createdAt) — глобальний фільтр,
+  // діє одразу на воронку, задачі, угоди й неактуальні, щоб можна було
+  // побачити, скільки лідів зайшло у вересні і скільки з них дійшло до угод.
+  let entryMonthQuery = '';
+  function visibleLeads(){
+    return entryMonthQuery ? leads.filter(l => monthOf(l.createdAt) === entryMonthQuery) : leads;
+  }
+
   function renderStats(){
-    const total = leads.length;
+    const total = visibleLeads().length;
     const byStage = {};
-    STAGES.forEach(s => byStage[s.key] = 0);
-    let dealSum = 0;
-    leads.forEach(l => {
+    ALL_STAGES.forEach(s => byStage[s.key] = 0);
+    let commissionSum = 0;
+    let dealsCount = 0;
+    let inactiveCount = 0;
+    const today = todayStr();
+    let dueCount = 0;
+    visibleLeads().forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
-      if(l.stage === 'client') dealSum += parseDealValue(l.deal_info);
+      if(DEAL_STAGE_KEYS.includes(l.stage)) dealsCount++;
+      if(l.stage === 'inactive') inactiveCount++;
+      if(l.stage === 'client') commissionSum += parseCommission(l.commission);
+      if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
     const tiles = [
       {label:'Усього лідів', value: total},
-      ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
-      {label:'Сума угод (оцінка)', value: dealSum ? '≈' + dealSum.toLocaleString('uk-UA') + ' тис $' : '—'},
+      ...BOARD_STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
+      {label:'Угоди (інвестор+клієнт)', value: dealsCount, color:'var(--stage-investor)'},
+      {label:'Не актуально', value: inactiveCount, color:'var(--ink-faint)'},
+      {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
+      {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', color:'var(--good)'},
     ];
     statsEl.innerHTML = tiles.map(t => `
       <div class="stat">
@@ -314,74 +691,346 @@
     `).join('');
   }
 
+  function renderFunnel(){
+    const all = visibleLeads().filter(matchesQuery);
+    const stages = [
+      {label:'Нові ліди', count: all.filter(l=>l.stage==='cold').length, color:'var(--stage-cold)'},
+      {label:'Кваліфікація', count: all.filter(l=>l.stage==='qualification').length, color:'var(--stage-qualification)'},
+      {label:'Якісний лід', count: all.filter(l=>l.stage==='qualified').length, color:'var(--stage-qualified)'},
+      {label:'Угоди', count: all.filter(l=>DEAL_STAGE_KEYS.includes(l.stage)).length, color:'var(--stage-investor)'},
+    ];
+    const max = Math.max(1, ...stages.map(s=>s.count));
+    const total = stages.reduce((s,x)=>s+x.count, 0) || 1;
+    funnelEl.innerHTML = stages.map(s => {
+      const widthPct = Math.round((s.count / max) * 100);
+      const share = Math.round((s.count / total) * 100);
+      return `
+        <div class="funnel-row">
+          <span class="funnel-label">${esc(s.label)}</span>
+          <div class="funnel-track"><div class="funnel-fill" style="width:${widthPct}%; background:${s.color};">${s.count || ''}</div></div>
+          <span class="funnel-pct">${s.count ? share + '%' : ''}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
   function renderTasks(){
-    const today = new Date().toISOString().slice(0,10);
-    const due = leads.filter(l => l.next_action_at && l.next_action_at <= today)
-      .sort((a,b)=> a.next_action_at.localeCompare(b.next_action_at));
+    const today = todayStr();
+    const due = visibleLeads().filter(l => l.nextActionAt && l.nextActionAt <= today)
+      .sort((a,b)=> a.nextActionAt.localeCompare(b.nextActionAt));
     if(!due.length){ taskBanner.hidden = true; return; }
     taskBanner.hidden = false;
     taskList.innerHTML = due.map(l => `
-      <div class="task-row" data-id="${esc(l.id)}">
-        <span class="who">${esc(l.name || l.phone || '(без імені)')} — ${esc(l.next_action||'')}</span>
-        <span class="when">${esc(l.next_action_at)}</span>
+      <div class="task-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
+        <span class="who">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="what">${esc(l.nextAction||'')}</span>
+        <span class="when">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
       </div>
     `).join('');
   }
 
   function matchesQuery(l){
     if(!query) return true;
-    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.deal_info].join(' ').toLowerCase();
+    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo,l.nextAction,l.leadSource,l.assignee].join(' ').toLowerCase();
     return hay.includes(query);
   }
 
-  function cardHtml(l){
-    const snippet = l.portrait || l.notes || l.deal_info || l.proposal || '';
-    const idx = stageIndex(l.stage);
+  function chatLinksHtml(phone){
+    const intl = intlPhone(phone);
+    if(!intl) return '';
     return `
-      <div class="card" style="border-left-color:${STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
+      <div class="card-chat">
+        <a href="https://t.me/+${intl}" target="_blank" rel="noopener" title="Написати в Telegram">✈️</a>
+        <a href="viber://chat?number=%2B${intl}" title="Написати у Viber">💜</a>
+        <a href="tel:+${intl}" title="Подзвонити">📞</a>
+      </div>
+    `;
+  }
+
+  function cardHtml(l){
+    const snippet = l.portrait || l.notes || l.dealInfo || l.proposal || '';
+    const idx = stageIndex(l.stage);
+    const today = todayStr();
+    let taskPill = '';
+    if(l.nextActionAt){
+      const cls = l.nextActionAt < today ? '' : (l.nextActionAt === today ? 'soon' : 'hidden-pill');
+      if(l.nextActionAt <= today){
+        const when = l.nextActionAt + (l.nextActionTime ? ' ' + l.nextActionTime : '');
+        taskPill = `<span class="task-pill ${cls}">⏰ ${esc(l.nextAction || 'завдання')} · ${esc(when)}</span>`;
+      }
+    }
+    return `
+      <div class="card" draggable="true" style="border-left-color:${ALL_STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
         <div class="name">${esc(l.name || '(без імені)')}</div>
         <div class="phone">${esc(l.phone || '—')}</div>
+        ${l.assignee ? `<div class="assignee-tag">👤 ${esc(l.assignee)}</div>` : ''}
         ${snippet ? `<div class="snippet">${esc(snippet)}</div>` : ''}
+        ${taskPill}
         <div class="badges">
+          ${l.channel && CHANNEL_LABEL[l.channel] ? `<span class="badge outline">${CHANNEL_LABEL[l.channel]}</span>` : ''}
           ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
           ${l.diagnosis ? `<span class="badge outline">${esc(l.diagnosis)}</span>` : ''}
-          ${l.source && CHANNEL_LABEL[l.source] ? `<span class="badge channel">${CHANNEL_LABEL[l.source]}</span>` : ''}
         </div>
         <div class="card-foot">
-          <span></span>
+          ${chatLinksHtml(l.phone)}
           <div class="stepper">
             <button data-move="prev" data-id="${esc(l.id)}" ${idx<=0?'disabled':''} title="Назад по воронці">‹</button>
-            <button data-move="next" data-id="${esc(l.id)}" ${idx>=STAGES.length-1?'disabled':''} title="Вперед по воронці">›</button>
+            <button data-move="next" data-id="${esc(l.id)}" ${idx>=ALL_STAGES.length-1?'disabled':''} title="Вперед по воронці — просуне в «Угоди», коли лід стане інвестором">›</button>
           </div>
         </div>
       </div>
     `;
   }
 
+  function populateMonthFilter(selectEl, months, keep){
+    const current = keep ? selectEl.value : '';
+    selectEl.innerHTML = '<option value="">Усі місяці</option>' +
+      months.map(ym => `<option value="${ym}">${esc(monthLabel(ym))}</option>`).join('');
+    if(months.includes(current)) selectEl.value = current;
+  }
+
   function renderBoard(){
-    const filtered = leads.filter(matchesQuery);
-    boardEl.innerHTML = STAGES.map(stage => {
-      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.id||0)-(b.id||0));
+    const filtered = visibleLeads().filter(matchesQuery);
+    boardEl.innerHTML = BOARD_STAGES.map(stage => {
+      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
       return `
-        <div class="column">
+        <div class="column" data-stage="${stage.key}">
           <div class="column-head">
-            <span class="title"><span class="dot" style="background:${stage.color}"></span>${esc(stage.label)}</span>
+            <span class="title"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${stage.color}"></span>${esc(stage.label)}</span>
             <span class="count">${items.length}</span>
           </div>
-          <div class="column-body">
+          <div class="column-body" data-stage="${stage.key}">
             ${items.length ? items.map(cardHtml).join('') : `<div class="column-empty">Немає лідів</div>`}
           </div>
         </div>
       `;
     }).join('');
+    wireDragAndDrop();
   }
 
-  function render(){ renderStats(); renderTasks(); renderBoard(); }
+  function renderTasksView(){
+    const withTasks = visibleLeads().filter(l => l.nextActionAt && matchesQuery(l));
+    populateMonthFilter(
+      taskMonthFilterEl,
+      [...new Set(withTasks.map(l=>l.nextActionAt.slice(0,7)))].sort().reverse(),
+      true
+    );
+    const taskMonth = taskMonthFilterEl.value;
+    const today = todayStr();
+    const rows = withTasks
+      .filter(l => !taskMonth || l.nextActionAt.slice(0,7) === taskMonth)
+      .sort((a,b)=> (a.nextActionAt+ (a.nextActionTime||'')).localeCompare(b.nextActionAt + (b.nextActionTime||'')));
+    tasksListEl.innerHTML = rows.length ? rows.map(l => `
+      <div class="task-list-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
+        <span class="badge" style="background:var(--accent-soft); color:var(--accent);">${esc(stageLabel(l.stage))}</span>
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(l.nextAction || '')}</span>
+        <span class="twhen">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
+      </div>
+    `).join('') : '<div class="empty-state">Немає завдань за цей період</div>';
+  }
 
-  function fillSendScriptOptions(){
+  function renderDealsView(){
+    const deals = visibleLeads().filter(l => DEAL_STAGE_KEYS.includes(l.stage) && matchesQuery(l));
+    populateMonthFilter(
+      dealMonthFilterEl,
+      [...new Set(deals.filter(l=>l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
+      true
+    );
+    const dealMonth = dealMonthFilterEl.value;
+    const rows = deals
+      .filter(l => !dealMonth || (l.dealDate||'').slice(0,7) === dealMonth)
+      .sort((a,b)=> (b.dealDate||'').localeCompare(a.dealDate||''));
+    dealsListEl.innerHTML = rows.length ? rows.map(l => {
+      const commission = parseCommission(l.commission);
+      const snippet = l.dealInfo || l.decision || l.diagnosis || l.proposal || '—';
+      const stageColor = l.stage === 'client' ? 'var(--stage-client)' : 'var(--stage-investor)';
+      return `
+      <div class="task-list-row" data-id="${esc(l.id)}">
+        <span class="badge" style="background:${stageColor}; color:#fff;">${esc(stageLabel(l.stage))}</span>
+        ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(snippet)}</span>
+        <span class="twhen">${l.dealDate ? esc(l.dealDate) : 'дата не вказана'}${commission ? ' · $' + commission.toLocaleString('uk-UA') : ''}</span>
+      </div>
+    `;
+    }).join('') : '<div class="empty-state">Ще немає угод за цей період</div>';
+  }
+
+  function addMonths(dateStr, months){
+    const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    d.setMonth(d.getMonth() + months);
+    return d.toISOString().slice(0,10);
+  }
+
+  function renderInactiveView(){
+    const rows = visibleLeads().filter(l => l.stage === 'inactive' && matchesQuery(l))
+      .sort((a,b)=> (a.nextActionAt||'9999').localeCompare(b.nextActionAt||'9999'));
+    inactiveListEl.innerHTML = rows.length ? rows.map(l => `
+      <div class="task-list-row" data-id="${esc(l.id)}">
+        <span class="badge" style="background:var(--ink-faint); color:#fff;">Не актуально</span>
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(l.notes || l.portrait || l.diagnosis || '—')}</span>
+        <span class="twhen">${l.nextActionAt ? 'Зв\'язатись: ' + esc(l.nextActionAt) : 'дату не задано'}</span>
+        <button type="button" class="btn small" data-reengage="${esc(l.id)}">🔁 +6 міс</button>
+      </div>
+    `).join('') : '<div class="empty-state">Немає неактуальних лідів</div>';
+  }
+
+  async function reengageLater(id){
+    const l = leads.find(x=>x.id===id);
+    if(!l) return;
+    const updates = {
+      nextActionAt: addMonths(l.nextActionAt, REENGAGE_MONTHS),
+      nextAction: l.nextAction || 'Розсилка: перевірити, чи стало актуально',
+    };
+    if(!leadsCol){ Object.assign(l, updates); render(); return; }
+    try{ await leadsCol.doc(id).update(updates); toast('Перенесено на +6 міс'); }
+    catch(e){ console.error(e); }
+  }
+
+  const CSV_COLUMNS = [
+    ['Ім\'я','name'], ['Телефон','phone'], ['Стадія', l=>stageLabel(l.stage)],
+    ['Оффер','offer'], ['Джерело','source'], ['Відповідальний','assignee'],
+    ['Портрет','portrait'], ['Діагностика','diagnosis'], ['Пропозиція','proposal'],
+    ['Рішення','decision'], ['Деталі угоди','dealInfo'], ['Дата угоди','dealDate'],
+    ['Комісія','commission'], ['Наступний крок','nextAction'],
+    ['Дата завдання','nextActionAt'], ['Час завдання','nextActionTime'], ['Нотатки','notes'],
+  ];
+  function csvCell(v){
+    const s = v==null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }
+  function exportCsv(){
+    const rows = visibleLeads().filter(matchesQuery);
+    const header = CSV_COLUMNS.map(c => csvCell(c[0])).join(',');
+    const lines = rows.map(l => CSV_COLUMNS.map(([,key]) => csvCell(typeof key==='function' ? key(l) : l[key])).join(','));
+    const csv = '﻿' + [header, ...lines].join('\r\n');
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `liika-leads-${todayStr()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Файл завантажено');
+  }
+
+  function render(){
+    populateMonthFilter(
+      entryMonthFilterEl,
+      [...new Set(leads.filter(l=>l.createdAt).map(l=>monthOf(l.createdAt)))].sort().reverse(),
+      true
+    );
+    entryMonthQuery = entryMonthFilterEl.value;
+    renderStats();
+    renderFunnel();
+    renderTasks();
+    renderBoard();
+    renderTasksView();
+    renderInactiveView();
+    renderDealsView();
+  }
+
+  function fillScriptSelect(){
     const sel = document.getElementById('sendScriptSelect');
     sel.innerHTML = '<option value="">— обрати скрипт —</option>' +
       scripts.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('');
+  }
+
+  function renderQuickActions(lead){
+    const box = document.getElementById('quickActions');
+    const intl = intlPhone(lead?.phone);
+    if(!intl){ box.innerHTML = ''; return; }
+    box.innerHTML = `
+      <a href="tel:+${intl}">📞 Подзвонити</a>
+      <a href="https://t.me/+${intl}" target="_blank" rel="noopener">✈️ Telegram</a>
+      <a href="viber://chat?number=%2B${intl}">💜 Viber</a>
+      <a href="https://wa.me/${intl}" target="_blank" rel="noopener">🟢 WhatsApp</a>
+      <button type="button" id="copyPhoneBtn">📋 Копіювати номер</button>
+    `;
+    document.getElementById('copyPhoneBtn').addEventListener('click', ()=> copyText(lead.phone));
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>toast('Скопійовано')).catch(()=>toast('Не вдалося скопіювати'));
+    }else{
+      toast('Копіювання недоступне в цьому вікні');
+    }
+  }
+
+  function updateSendTelegramLink(){
+    const link = document.getElementById('sendTelegramLink');
+    const hint = document.getElementById('sendChannelHint');
+    const lead = leads.find(l=>l.id===editingId);
+    const intl = intlPhone(lead?.phone);
+    const text = document.getElementById('sendText').value.trim();
+    const botChannel = lead && lead.externalId && (lead.channel === 'telegram' || lead.channel === 'viber');
+    if((!intl && !botChannel) || !text){
+      link.classList.add('disabled');
+      hint.textContent = (intl || botChannel)
+        ? 'Впишіть або оберіть текст, щоб увімкнути кнопку «Надіслати».'
+        : 'У ліда немає телефону — надіслати нема куди.';
+      return;
+    }
+    link.classList.remove('disabled');
+    hint.textContent = botChannel
+      ? `Надішле напряму через бота (${CHANNEL_LABEL[lead.channel]}) — без переходу нікуди.`
+      : 'Відкриє чат у Telegram з готовим текстом — лишиться натиснути «Надіслати» там.';
+  }
+
+  async function sendMessageToLead(){
+    const lead = leads.find(l=>l.id===editingId);
+    const text = document.getElementById('sendText').value.trim();
+    if(!lead || !text) return;
+    const botChannel = lead.externalId && (lead.channel === 'telegram' || lead.channel === 'viber');
+    if(botChannel){
+      try{
+        await apiFetch(`/api/leads/${editingId}/send`, {method:'POST', body: JSON.stringify({text})});
+        toast('Надіслано через бота');
+        document.getElementById('sendText').value = '';
+        updateSendTelegramLink();
+      }catch(e){ toast('Не вдалося надіслати: ' + e.message); }
+      return;
+    }
+    const intl = intlPhone(lead.phone);
+    if(!intl) return;
+    window.open(`https://t.me/+${intl}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  }
+
+  function updateGcalLink(){
+    const link = document.getElementById('gcalLink');
+    const hint = document.getElementById('gcalHint');
+    const dateVal = document.getElementById('f-next-date').value;
+    const timeVal = document.getElementById('f-next-time').value;
+    const nextVal = document.getElementById('f-next').value.trim();
+    if(!editingId || !dateVal || !timeVal){
+      link.hidden = true; hint.hidden = false;
+      hint.textContent = !editingId
+        ? 'Спершу збережіть лід — тоді з’явиться кнопка'
+        : 'Вкажіть дату й час «Наступного кроку» — з’явиться кнопка';
+      return;
+    }
+    const lead = leads.find(l=>l.id===editingId) || {};
+    const who = lead.name || lead.phone || 'лід';
+    const title = encodeURIComponent(`☑️ Завдання: ${who}${nextVal ? ' — ' + nextVal : ''}`);
+    // 30-хвилинний блок під конкретний час — так нагадування Google Calendar
+    // прилетить саме о заданій годині, а не «десь протягом дня».
+    const fmt = d => d.getFullYear()
+      + String(d.getMonth()+1).padStart(2,'0')
+      + String(d.getDate()).padStart(2,'0') + 'T'
+      + String(d.getHours()).padStart(2,'0')
+      + String(d.getMinutes()).padStart(2,'0') + '00';
+    const startDt = new Date(`${dateVal}T${timeVal}:00`);
+    const endDt = new Date(startDt.getTime() + 30*60000);
+    const leadUrl = location.origin + location.pathname + '?lead=' + encodeURIComponent(editingId);
+    const detailsLines = [nextVal, lead.phone ? ('Телефон: ' + lead.phone) : '', 'Картка ліда: ' + leadUrl].filter(Boolean);
+    const details = encodeURIComponent(detailsLines.join('\n'));
+    link.href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(startDt)}/${fmt(endDt)}&details=${details}`;
+    link.hidden = false; hint.hidden = true;
   }
 
   function openDrawer(lead){
@@ -391,115 +1040,240 @@
     document.getElementById('f-phone').value = lead?.phone || '';
     document.getElementById('f-stage').value = lead?.stage || 'cold';
     document.getElementById('f-offer').value = lead?.offer || '';
-    document.getElementById('f-prev').value = lead?.prev_contact || '';
+    document.getElementById('f-source').value = lead?.leadSource || '';
+    document.getElementById('f-assignee').value = lead?.assignee || '';
+    document.getElementById('f-prev').value = lead?.prevContact || '';
     document.getElementById('f-portrait').value = lead?.portrait || '';
     document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
     document.getElementById('f-decision').value = lead?.decision || '';
     document.getElementById('f-proposal').value = lead?.proposal || '';
-    document.getElementById('f-deal').value = lead?.deal_info || '';
-    document.getElementById('f-next').value = lead?.next_action || '';
-    document.getElementById('f-next-date').value = lead?.next_action_at || '';
+    document.getElementById('f-deal').value = lead?.dealInfo || '';
+    document.getElementById('f-deal-date').value = lead?.dealDate || '';
+    document.getElementById('f-commission').value = lead?.commission || '';
+    document.getElementById('f-next').value = lead?.nextAction || '';
+    document.getElementById('f-next-date').value = lead?.nextActionAt || '';
+    document.getElementById('f-next-time').value = lead?.nextActionTime || '';
     document.getElementById('f-notes').value = lead?.notes || '';
+    document.getElementById('quickNote').value = '';
     document.getElementById('deleteLeadBtn').hidden = !lead;
-
-    const sendBox = document.getElementById('sendBox');
-    const canSend = lead && lead.external_id && SENDABLE_CHANNELS[lead.source];
-    sendBox.hidden = !lead;
-    if(lead){
-      document.getElementById('sendChannelNote').textContent = canSend
-        ? `Канал: ${SENDABLE_CHANNELS[lead.source]}`
-        : lead.source === 'facebook'
-          ? 'Лід із Facebook Ads — прямого каналу відповіді немає (лише телефон/email у нотатках).'
-          : 'Ліда додано вручну — немає каналу (Telegram/Viber) для надсилання.';
-      document.getElementById('sendScriptSelect').disabled = !canSend;
-      document.getElementById('sendText').disabled = !canSend;
-      document.getElementById('sendBtn').disabled = !canSend;
-    }
-
-    drawer.hidden = false; scrim.hidden = false;
+    document.getElementById('sendBox').hidden = !lead;
+    document.getElementById('sendScriptSelect').value = '';
+    document.getElementById('sendText').value = '';
+    renderQuickActions(lead);
+    updateGcalLink();
+    updateSendTelegramLink();
+    checkDuplicate();
+    drawer.hidden = false;
+    scrim.hidden = false;
     document.getElementById('f-name').focus();
   }
-  function closeDrawer(){ drawer.hidden = true; scrim.hidden = true; editingId = null; }
+  function closeDrawer(){
+    drawer.hidden = true; scrim.hidden = true; editingId = null;
+  }
 
-  async function saveLead(){
-    const data = {
+  function currentFormData(){
+    return {
       name: document.getElementById('f-name').value.trim(),
       phone: document.getElementById('f-phone').value.trim(),
       stage: document.getElementById('f-stage').value,
       offer: document.getElementById('f-offer').value.trim(),
-      prev_contact: document.getElementById('f-prev').value.trim(),
+      leadSource: document.getElementById('f-source').value.trim(),
+      assignee: document.getElementById('f-assignee').value.trim(),
+      prevContact: document.getElementById('f-prev').value.trim(),
       portrait: document.getElementById('f-portrait').value.trim(),
       diagnosis: document.getElementById('f-diagnosis').value.trim(),
       decision: document.getElementById('f-decision').value.trim(),
       proposal: document.getElementById('f-proposal').value.trim(),
-      deal_info: document.getElementById('f-deal').value.trim(),
-      next_action: document.getElementById('f-next').value.trim(),
-      next_action_at: document.getElementById('f-next-date').value,
+      dealInfo: document.getElementById('f-deal').value.trim(),
+      dealDate: document.getElementById('f-deal-date').value,
+      commission: document.getElementById('f-commission').value.trim(),
+      nextAction: document.getElementById('f-next').value.trim(),
+      nextActionAt: document.getElementById('f-next-date').value,
+      nextActionTime: document.getElementById('f-next-time').value,
       notes: document.getElementById('f-notes').value.trim(),
     };
+  }
+
+  async function saveLead(){
+    const data = currentFormData();
+    data.updatedAt = Date.now();
     if(!data.name && !data.phone){ closeDrawer(); return; }
+    const prevLead = editingId ? leads.find(l=>l.id===editingId) : null;
+    const enteringInactive = data.stage === 'inactive' && (!prevLead || prevLead.stage !== 'inactive');
+    if(enteringInactive && !data.nextActionAt){
+      data.nextActionAt = addMonths(null, REENGAGE_MONTHS);
+      data.nextAction = data.nextAction || 'Розсилка: перевірити, чи стало актуально';
+    }
+    if(!leadsCol){
+      if(editingId){
+        const i = leads.findIndex(l=>l.id===editingId);
+        if(i>-1) leads[i] = {...leads[i], ...data};
+      } else {
+        data.id = 'local-' + Date.now();
+        data.order = leads.length;
+        data.createdAt = Date.now();
+        leads.push(data);
+      }
+      render();
+      closeDrawer();
+      return;
+    }
     try{
-      if(editingId) await api(`/api/leads/${editingId}`, {method:'PATCH', body: JSON.stringify(data)});
-      else await api('/api/leads', {method:'POST', body: JSON.stringify(data)});
-      await loadLeads();
-    }catch(e){ console.error(e); }
+      if(editingId){
+        await leadsCol.doc(editingId).update(data);
+      } else {
+        data.order = leads.length;
+        data.createdAt = Date.now();
+        await leadsCol.add(data);
+      }
+      toast('Збережено');
+    }catch(e){ console.error(e); toast('Помилка збереження'); }
     closeDrawer();
+  }
+
+  async function addQuickNote(){
+    const text = document.getElementById('quickNote').value.trim();
+    if(!text) return;
+    const stamp = new Date().toLocaleDateString('uk-UA', {day:'2-digit', month:'2-digit'});
+    const notesEl = document.getElementById('f-notes');
+    notesEl.value = (notesEl.value ? notesEl.value + '\n' : '') + `${stamp} — ${text}`;
+    document.getElementById('quickNote').value = '';
+    if(editingId){
+      try{
+        if(leadsCol) await leadsCol.doc(editingId).update({notes: notesEl.value, updatedAt: Date.now()});
+        const i = leads.findIndex(l=>l.id===editingId);
+        if(i>-1) leads[i].notes = notesEl.value;
+        toast('Нотатку додано');
+      }catch(e){ console.error(e); }
+    }
   }
 
   async function deleteLead(){
     if(!editingId) return closeDrawer();
-    try{ await api(`/api/leads/${editingId}`, {method:'DELETE'}); await loadLeads(); }
-    catch(e){ console.error(e); }
+    if(!leadsCol){
+      leads = leads.filter(l=>l.id!==editingId);
+      render(); closeDrawer(); return;
+    }
+    try{ await leadsCol.doc(editingId).delete(); }catch(e){ console.error(e); }
     closeDrawer();
   }
 
-  async function moveStage(id, dir){
-    const l = leads.find(x=>String(x.id)===String(id));
-    if(!l) return;
-    const idx = stageIndex(l.stage);
-    const next = dir==='next' ? Math.min(idx+1, STAGES.length-1) : Math.max(idx-1,0);
-    if(next===idx) return;
-    try{ await api(`/api/leads/${id}`, {method:'PATCH', body: JSON.stringify({stage: STAGES[next].key})}); await loadLeads(); }
+  async function setStage(id, newStage){
+    const l = leads.find(x=>x.id===id);
+    if(!l || l.stage === newStage) return;
+    if(!leadsCol){
+      l.stage = newStage; render(); return;
+    }
+    try{ await leadsCol.doc(id).update({stage:newStage, updatedAt:Date.now()}); }
     catch(e){ console.error(e); }
   }
 
-  async function sendMessage(){
-    if(!editingId) return;
-    const text = document.getElementById('sendText').value.trim();
-    if(!text) return;
-    try{
-      await api(`/api/leads/${editingId}/send`, {method:'POST', body: JSON.stringify({text})});
-      document.getElementById('sendText').value = '';
-      await loadLeads();
-      const updated = leads.find(l=>String(l.id)===String(editingId));
-      if(updated) openDrawer(updated);
-    }catch(e){ alert('Не вдалося надіслати: ' + e.message); }
+  function moveStage(id, dir){
+    const l = leads.find(x=>x.id===id);
+    if(!l) return;
+    const idx = stageIndex(l.stage);
+    const next = dir==='next' ? Math.min(idx+1, ALL_STAGES.length-1) : Math.max(idx-1,0);
+    if(next!==idx) setStage(id, ALL_STAGES[next].key);
+  }
+
+  function wireDragAndDrop(){
+    boardEl.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+    boardEl.querySelectorAll('.column').forEach(col => {
+      col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', (e) => {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain');
+        if(id) setStage(id, col.dataset.stage);
+      });
+    });
   }
 
   boardEl.addEventListener('click', (e) => {
     const moveBtn = e.target.closest('[data-move]');
-    if(moveBtn){ e.stopPropagation(); moveStage(moveBtn.dataset.id, moveBtn.dataset.move); return; }
+    if(moveBtn){
+      e.stopPropagation();
+      moveStage(moveBtn.dataset.id, moveBtn.dataset.move);
+      return;
+    }
+    if(e.target.closest('.card-chat')) return;
     const card = e.target.closest('.card');
-    if(card){ const lead = leads.find(l=>String(l.id)===card.dataset.id); if(lead) openDrawer(lead); }
+    if(card){
+      const lead = leads.find(l=>l.id===card.dataset.id);
+      if(lead) openDrawer(lead);
+    }
   });
   taskList.addEventListener('click', (e) => {
     const row = e.target.closest('.task-row');
-    if(row){ const lead = leads.find(l=>String(l.id)===row.dataset.id); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
   });
 
   document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
   document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
-  document.getElementById('scrim').addEventListener('click', ()=>{ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; });
   document.getElementById('saveLeadBtn').addEventListener('click', saveLead);
   document.getElementById('deleteLeadBtn').addEventListener('click', deleteLead);
-  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('addNoteBtn').addEventListener('click', addQuickNote);
+  document.getElementById('f-next').addEventListener('input', updateGcalLink);
+  document.getElementById('f-next-date').addEventListener('input', updateGcalLink);
+  document.getElementById('f-next-time').addEventListener('input', updateGcalLink);
+  document.getElementById('f-phone').addEventListener('input', checkDuplicate);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
     if(s) document.getElementById('sendText').value = s.text;
+    updateSendTelegramLink();
   });
-  searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
+  document.getElementById('sendText').addEventListener('input', updateSendTelegramLink);
+  document.getElementById('sendTelegramLink').addEventListener('click', sendMessageToLead);
+  searchEl.addEventListener('input', ()=>{
+    query = searchEl.value.trim().toLowerCase();
+    renderStats(); renderFunnel(); renderBoard(); renderTasksView(); renderDealsView(); renderInactiveView();
+  });
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
+  });
+
+  function switchTab(view){
+    boardView.hidden = view !== 'board';
+    tasksView.hidden = view !== 'tasks';
+    dealsView.hidden = view !== 'deals';
+    inactiveView.hidden = view !== 'inactive';
+    tabBoardBtn.classList.toggle('active', view === 'board');
+    tabTasksBtn.classList.toggle('active', view === 'tasks');
+    tabDealsBtn.classList.toggle('active', view === 'deals');
+    tabInactiveBtn.classList.toggle('active', view === 'inactive');
+  }
+  tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
+  tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
+  tabDealsBtn.addEventListener('click', ()=>switchTab('deals'));
+  tabInactiveBtn.addEventListener('click', ()=>switchTab('inactive'));
+  taskMonthFilterEl.addEventListener('change', renderTasksView);
+  dealMonthFilterEl.addEventListener('change', renderDealsView);
+  entryMonthFilterEl.addEventListener('change', ()=>{
+    entryMonthQuery = entryMonthFilterEl.value;
+    renderStats(); renderFunnel(); renderTasks(); renderBoard(); renderTasksView(); renderInactiveView(); renderDealsView();
+  });
+  tasksListEl.addEventListener('click', (e)=>{
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+  });
+  dealsListEl.addEventListener('click', (e)=>{
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+  });
+  inactiveListEl.addEventListener('click', (e)=>{
+    const reengageId = e.target.closest('[data-reengage]')?.dataset.reengage;
+    if(reengageId){ e.stopPropagation(); reengageLater(reengageId); return; }
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
   });
 
   // ---- scripts panel ----
@@ -509,11 +1283,13 @@
         <div class="title">${esc(s.title)}</div>
         <div class="text">${esc(s.text)}</div>
         <div class="row">
+          <button class="btn small" data-copy="${esc(s.id)}">Копіювати</button>
           <button class="btn small" data-edit="${esc(s.id)}">Редагувати</button>
           <button class="btn small danger" data-del="${esc(s.id)}">Видалити</button>
         </div>
       </div>
-    `).join('') || '<div class="column-empty">Немає скриптів</div>';
+    `).join('') || '<div class="column-empty">Ще немає скриптів — додайте перший вище</div>';
+    fillScriptSelect();
   }
 
   document.getElementById('scriptsBtn').addEventListener('click', ()=>{
@@ -522,59 +1298,116 @@
   document.getElementById('closeScripts').addEventListener('click', ()=>{
     scriptsDrawer.hidden = true; scrim.hidden = true;
   });
+  document.getElementById('scrim').addEventListener('click', ()=>{
+    closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true;
+  });
   document.getElementById('addScriptBtn').addEventListener('click', async ()=>{
     const title = document.getElementById('ns-title').value.trim();
     const text = document.getElementById('ns-text').value.trim();
     if(!title || !text) return;
-    try{
-      await api('/api/scripts', {method:'POST', body: JSON.stringify({title, text})});
-      document.getElementById('ns-title').value = '';
-      document.getElementById('ns-text').value = '';
-      await loadScripts();
-    }catch(e){ console.error(e); }
+    document.getElementById('ns-title').value = '';
+    document.getElementById('ns-text').value = '';
+    if(!scriptsCol){
+      scripts.push({id:'local-'+Date.now(), title, text});
+      renderScriptsList();
+      return;
+    }
+    try{ await scriptsCol.add({title, text, createdAt: Date.now()}); }
+    catch(e){ console.error(e); }
   });
   document.getElementById('scriptsList').addEventListener('click', async (e)=>{
+    const copyId = e.target.closest('[data-copy]')?.dataset.copy;
     const delId = e.target.closest('[data-del]')?.dataset.del;
     const editId = e.target.closest('[data-edit]')?.dataset.edit;
+    if(copyId){
+      const s = scripts.find(s=>String(s.id)===copyId);
+      if(s) copyText(s.text);
+      return;
+    }
     if(delId){
-      await api(`/api/scripts/${delId}`, {method:'DELETE'});
-      await loadScripts();
-    }else if(editId){
+      if(!scriptsCol){ scripts = scripts.filter(s=>String(s.id)!==delId); renderScriptsList(); return; }
+      try{ await scriptsCol.doc(delId).delete(); }catch(e){ console.error(e); }
+      return;
+    }
+    if(editId){
       const s = scripts.find(s=>String(s.id)===editId);
       if(!s) return;
       const newTitle = window.prompt('Назва:', s.title);
       if(newTitle===null) return;
       const newText = window.prompt('Текст:', s.text);
       if(newText===null) return;
-      await api(`/api/scripts/${editId}`, {method:'PATCH', body: JSON.stringify({title:newTitle, text:newText})});
-      await loadScripts();
+      if(!scriptsCol){ s.title=newTitle; s.text=newText; renderScriptsList(); return; }
+      try{ await scriptsCol.doc(editId).update({title:newTitle, text:newText}); }catch(e){ console.error(e); }
     }
   });
 
-  async function loadLeads(){
-    leads = await api('/api/leads');
-    render();
-  }
-  async function loadScripts(){
-    scripts = await api('/api/scripts');
-    renderScriptsList();
-    fillSendScriptOptions();
+  render();
+
+  function makeRestCollection(basePath){
+    let listener = null;
+    let errHandler = null;
+    async function refresh(){
+      try{
+        const rows = await apiFetch(basePath);
+        const docs = rows.map(r => ({id: String(r.id), data: () => r}));
+        if(listener) listener({docs});
+      }catch(e){
+        if(errHandler) errHandler(e);
+        else console.error(e);
+      }
+    }
+    return {
+      onSnapshot(next, err){
+        listener = next;
+        errHandler = err;
+        refresh();
+        return () => { listener = null; };
+      },
+      doc(id){
+        return {
+          async update(data){ await apiFetch(`${basePath}/${id}`, {method:'PATCH', body: JSON.stringify(data)}); await refresh(); },
+          async delete(){ await apiFetch(`${basePath}/${id}`, {method:'DELETE'}); await refresh(); },
+        };
+      },
+      async add(data){ await apiFetch(basePath, {method:'POST', body: JSON.stringify(data)}); await refresh(); },
+      refresh,
+    };
   }
 
   async function boot(){
     if(!token){ promptLogin(); if(!token) return; }
-    try{
-      await Promise.all([loadLeads(), loadScripts()]);
-      bannerEl.hidden = true;
-    }catch(e){
-      console.error(e);
-      bannerEl.hidden = false;
-      bannerEl.textContent = 'Помилка з’єднання із сервером CRM.';
-    }
+    leadsCol = makeRestCollection('/api/leads');
+    scriptsCol = makeRestCollection('/api/scripts');
+    const deepLinkId = new URLSearchParams(location.search).get('lead');
+    let deepLinkHandled = false;
+    leadsCol.onSnapshot(
+      (snap) => {
+        leads = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        bannerEl.hidden = true;
+        render();
+        if(deepLinkId && !deepLinkHandled){
+          const target = leads.find(l => l.id === deepLinkId);
+          if(target){ deepLinkHandled = true; openDrawer(target); }
+        }
+      },
+      (err) => {
+        if(err.message !== 'unauthorized'){
+          bannerEl.hidden = false;
+          bannerEl.textContent = 'Помилка з’єднання з сервером: ' + err.message;
+        }
+      }
+    );
+    scriptsCol.onSnapshot(
+      (snap) => {
+        scripts = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        renderScriptsList();
+      },
+      (err) => { if(err.message !== 'unauthorized') console.error(err); }
+    );
   }
-
   boot();
 })();
 </script>
+
 </body>
 </html>

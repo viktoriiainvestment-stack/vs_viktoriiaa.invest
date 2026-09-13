@@ -2,7 +2,7 @@ import os
 import re
 import requests
 
-from db import find_by_external_id, create_lead, update_lead
+from db import find_by_channel, create_lead, update_lead
 from notifications import notify_admin
 
 VIBER_TOKEN = os.environ.get("VIBER_BOT_TOKEN")
@@ -62,13 +62,13 @@ def handle_event(payload):
     if event == "conversation_started":
         user = payload.get("user", {})
         external_id = user.get("id", "")
-        lead = find_by_external_id("viber", external_id)
+        lead = find_by_channel("viber", external_id)
         if not lead:
             create_lead({
                 "name": user.get("name", ""),
                 "stage": "cold",
-                "source": "viber",
-                "external_id": external_id,
+                "channel": "viber",
+                "externalId": external_id,
                 "notes": "Розпочав діалог у Viber",
             })
             notify_admin(f"🆕 Новий лід (Viber): {user.get('name', external_id)}")
@@ -80,7 +80,7 @@ def handle_event(payload):
         message = payload.get("message", {})
         text = message.get("text", "") if message.get("type") == "text" else ""
 
-        lead = find_by_external_id("viber", external_id)
+        lead = find_by_channel("viber", external_id)
         phone_match = PHONE_RE.search(text) if text else None
 
         if not lead:
@@ -88,8 +88,8 @@ def handle_event(payload):
                 "name": sender.get("name", ""),
                 "phone": phone_match.group(1) if phone_match else "",
                 "stage": "cold",
-                "source": "viber",
-                "external_id": external_id,
+                "channel": "viber",
+                "externalId": external_id,
                 "notes": text,
             })
             notify_admin(f"🆕 Новий лід (Viber): {sender.get('name', external_id)}\n{text}")

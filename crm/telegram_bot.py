@@ -4,7 +4,7 @@ import re
 import telebot
 from telebot import types
 
-from db import find_by_external_id, create_lead, update_lead
+from db import find_by_channel, create_lead, update_lead
 from notifications import notify_admin
 
 TOKEN = os.environ.get("TELEGRAM_CRM_BOT_TOKEN")
@@ -37,13 +37,13 @@ if bot:
     @bot.message_handler(commands=["start"])
     def handle_start(message):
         chat_id = str(message.chat.id)
-        lead = find_by_external_id("telegram", chat_id)
+        lead = find_by_channel("telegram", chat_id)
         if not lead:
             create_lead({
                 "name": message.from_user.full_name or "",
                 "stage": "cold",
-                "source": "telegram",
-                "external_id": chat_id,
+                "channel": "telegram",
+                "externalId": chat_id,
                 "notes": "Розпочав діалог у Telegram",
             })
             notify_admin(f"🆕 Новий лід (Telegram): {message.from_user.full_name or chat_id}")
@@ -59,13 +59,13 @@ if bot:
         chat_id = str(message.chat.id)
         phone = message.contact.phone_number
         name = f"{message.contact.first_name or ''} {message.contact.last_name or ''}".strip()
-        lead = find_by_external_id("telegram", chat_id)
+        lead = find_by_channel("telegram", chat_id)
         if lead:
             update_lead(lead["id"], {"phone": phone, "name": name or lead.get("name", "")})
         else:
             create_lead({
                 "name": name, "phone": phone, "stage": "cold",
-                "source": "telegram", "external_id": chat_id,
+                "channel": "telegram", "externalId": chat_id,
             })
             notify_admin(f"🆕 Новий лід (Telegram): {name}, {phone}")
         bot.send_message(chat_id, ACK, reply_markup=types.ReplyKeyboardRemove())
@@ -75,12 +75,12 @@ if bot:
         chat_id = str(message.chat.id)
         text = message.text
         phone_match = PHONE_RE.search(text)
-        lead = find_by_external_id("telegram", chat_id)
+        lead = find_by_channel("telegram", chat_id)
         if not lead:
             create_lead({
                 "name": message.from_user.full_name or "",
                 "phone": phone_match.group(1) if phone_match else "",
-                "stage": "cold", "source": "telegram", "external_id": chat_id,
+                "stage": "cold", "channel": "telegram", "externalId": chat_id,
                 "notes": text,
             })
             notify_admin(f"🆕 Новий лід (Telegram): {message.from_user.full_name or chat_id}\n{text}")

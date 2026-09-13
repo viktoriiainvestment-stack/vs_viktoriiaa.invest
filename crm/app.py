@@ -81,15 +81,15 @@ def api_send_to_lead(lead_id):
     text = (request.get_json(force=True) or {}).get("text", "").strip()
     if not text:
         return jsonify({"error": "text is required"}), 400
-    if not lead.get("external_id"):
+    if not lead.get("externalId"):
         return jsonify({"error": "У цього ліда немає каналу (Telegram/Viber) для надсилання"}), 400
 
-    if lead["source"] == "telegram":
-        telegram_bot.send_message(lead["external_id"], text)
-    elif lead["source"] == "viber":
-        viber_bot.send_message(lead["external_id"], text)
+    if lead["channel"] == "telegram":
+        telegram_bot.send_message(lead["externalId"], text)
+    elif lead["channel"] == "viber":
+        viber_bot.send_message(lead["externalId"], text)
     else:
-        return jsonify({"error": f"Для джерела «{lead['source']}» немає каналу відповіді"}), 400
+        return jsonify({"error": f"Для каналу «{lead['channel']}» немає надсилання"}), 400
 
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     notes = (lead.get("notes") or "") + f"\n[{stamp}] Надіслано: {text}"
@@ -172,7 +172,7 @@ def _digest_loop():
         if now.hour == DIGEST_HOUR and last_sent_date != today:
             due = db.leads_with_tasks_due(today)
             if due:
-                lines = [f"— {l['name'] or l['phone']}: {l['next_action']} ({l['next_action_at']})" for l in due]
+                lines = [f"— {l['name'] or l['phone']}: {l['nextAction']} ({l['nextActionAt']})" for l in due]
                 notify_admin("📋 Завдання на сьогодні:\n" + "\n".join(lines))
             last_sent_date = today
         time.sleep(60)
