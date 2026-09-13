@@ -10,6 +10,8 @@ CRM (db.create_lead) — без SendPulse, без вебхука, без опл�
 варто редагувати, коли міняється контент. Тут — тільки механіка.
 """
 import os
+import time
+import traceback
 
 import telebot
 from telebot import types
@@ -173,6 +175,17 @@ if bot:
 
 def start_polling():
     if not bot:
-        print("QUIZ_BOT_TOKEN не задано — квіз-бот вимкнено.")
+        print("QUIZ_BOT_TOKEN не задано — квіз-бот вимкнено.", flush=True)
         return
-    bot.infinity_polling(skip_pending=True)
+    # Явно друкуємо старт і будь-яку помилку з flush=True: без цього
+    # print() під gunicorn на Railway може не долетіти в Deploy Logs
+    # (буферизація stdout), і бот виглядає "мовчазним", хоча насправді
+    # впав з помилкою (наприклад, невалідний токен).
+    print(f"Квіз-бот стартує (токен закінчується на ...{TOKEN[-4:]})", flush=True)
+    while True:
+        try:
+            bot.infinity_polling(skip_pending=True)
+        except Exception:
+            print("Квіз-бот впав з помилкою:", flush=True)
+            traceback.print_exc()
+            time.sleep(5)

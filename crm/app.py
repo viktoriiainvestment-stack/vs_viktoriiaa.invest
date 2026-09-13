@@ -181,6 +181,13 @@ def _start_background_workers():
     # не дозволяє (конфлікт getUpdates). Досить одного, квіз-бот
     # покриває обидві ролі, а notify_admin() однаково працює через
     # TELEGRAM_CRM_BOT_TOKEN незалежно від polling.
+    print(
+        "Змінні середовища на старті: "
+        f"QUIZ_BOT_TOKEN={'є' if quiz_bot.TOKEN else 'ВІДСУТНІЙ'}, "
+        f"TELEGRAM_CRM_BOT_TOKEN={'є' if telegram_bot.TOKEN else 'відсутній'}, "
+        f"ADMIN_TELEGRAM_CHAT_ID={'є' if os.environ.get('ADMIN_TELEGRAM_CHAT_ID') else 'відсутній'}",
+        flush=True,
+    )
     same_bot = bool(telegram_bot.TOKEN) and telegram_bot.TOKEN == quiz_bot.TOKEN
     if telegram_bot.bot and not same_bot:
         threading.Thread(target=telegram_bot.start_polling, daemon=True).start()
