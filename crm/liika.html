@@ -327,6 +327,10 @@
         <button class="tab-btn" id="tabDealsBtn" type="button">Угоди</button>
         <button class="tab-btn" id="tabInactiveBtn" type="button">Не актуально</button>
       </div>
+      <div class="filters-row" title="Фільтр за місяцем, коли лід зайшов у CRM — діє на всі вкладки">
+        <label for="entryMonthFilter">Когорта:</label>
+        <select id="entryMonthFilter"><option value="">Усі місяці</option></select>
+      </div>
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
@@ -511,6 +515,7 @@
   const tabTasksBtn = document.getElementById('tabTasksBtn');
   const tabDealsBtn = document.getElementById('tabDealsBtn');
   const tabInactiveBtn = document.getElementById('tabInactiveBtn');
+  const entryMonthFilterEl = document.getElementById('entryMonthFilter');
 
   let leads = [];
   let scripts = [];
@@ -561,9 +566,20 @@
     const [y,m] = ym.split('-');
     return MONTH_NAMES[parseInt(m,10)-1] + ' ' + y;
   }
+  function monthOf(ts){
+    return ts ? new Date(ts).toISOString().slice(0,7) : '';
+  }
+
+  // Когорта за місяцем надходження ліда (createdAt) — глобальний фільтр,
+  // діє одразу на воронку, задачі, угоди й неактуальні, щоб можна було
+  // побачити, скільки лідів зайшло у вересні і скільки з них дійшло до угод.
+  let entryMonthQuery = '';
+  function visibleLeads(){
+    return entryMonthQuery ? leads.filter(l => monthOf(l.createdAt) === entryMonthQuery) : leads;
+  }
 
   function renderStats(){
-    const total = leads.length;
+    const total = visibleLeads().length;
     const byStage = {};
     ALL_STAGES.forEach(s => byStage[s.key] = 0);
     let commissionSum = 0;
@@ -571,7 +587,7 @@
     let inactiveCount = 0;
     const today = todayStr();
     let dueCount = 0;
-    leads.forEach(l => {
+    visibleLeads().forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
       if(DEAL_STAGE_KEYS.includes(l.stage)) dealsCount++;
       if(l.stage === 'inactive') inactiveCount++;
@@ -596,7 +612,7 @@
 
   function renderTasks(){
     const today = todayStr();
-    const due = leads.filter(l => l.nextActionAt && l.nextActionAt <= today)
+    const due = visibleLeads().filter(l => l.nextActionAt && l.nextActionAt <= today)
       .sort((a,b)=> a.nextActionAt.localeCompare(b.nextActionAt));
     if(!due.length){ taskBanner.hidden = true; return; }
     taskBanner.hidden = false;
@@ -668,7 +684,7 @@
   }
 
   function renderBoard(){
-    const filtered = leads.filter(matchesQuery);
+    const filtered = visibleLeads().filter(matchesQuery);
     boardEl.innerHTML = BOARD_STAGES.map(stage => {
       const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
       return `
@@ -687,7 +703,7 @@
   }
 
   function renderTasksView(){
-    const withTasks = leads.filter(l => l.nextActionAt);
+    const withTasks = visibleLeads().filter(l => l.nextActionAt);
     populateMonthFilter(
       taskMonthFilterEl,
       [...new Set(withTasks.map(l=>l.nextActionAt.slice(0,7)))].sort().reverse(),
@@ -709,7 +725,7 @@
   }
 
   function renderDealsView(){
-    const deals = leads.filter(l => DEAL_STAGE_KEYS.includes(l.stage));
+    const deals = visibleLeads().filter(l => DEAL_STAGE_KEYS.includes(l.stage));
     populateMonthFilter(
       dealMonthFilterEl,
       [...new Set(deals.filter(l=>l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
@@ -742,7 +758,7 @@
   }
 
   function renderInactiveView(){
-    const rows = leads.filter(l => l.stage === 'inactive')
+    const rows = visibleLeads().filter(l => l.stage === 'inactive')
       .sort((a,b)=> (a.nextActionAt||'9999').localeCompare(b.nextActionAt||'9999'));
     inactiveListEl.innerHTML = rows.length ? rows.map(l => `
       <div class="task-list-row" data-id="${esc(l.id)}">
@@ -768,6 +784,12 @@
   }
 
   function render(){
+    populateMonthFilter(
+      entryMonthFilterEl,
+      [...new Set(leads.filter(l=>l.createdAt).map(l=>monthOf(l.createdAt)))].sort().reverse(),
+      true
+    );
+    entryMonthQuery = entryMonthFilterEl.value;
     renderStats();
     renderTasks();
     renderBoard();
@@ -1068,6 +1090,10 @@
   tabInactiveBtn.addEventListener('click', ()=>switchTab('inactive'));
   taskMonthFilterEl.addEventListener('change', renderTasksView);
   dealMonthFilterEl.addEventListener('change', renderDealsView);
+  entryMonthFilterEl.addEventListener('change', ()=>{
+    entryMonthQuery = entryMonthFilterEl.value;
+    renderStats(); renderTasks(); renderBoard(); renderTasksView(); renderInactiveView(); renderDealsView();
+  });
   tasksListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
     if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
