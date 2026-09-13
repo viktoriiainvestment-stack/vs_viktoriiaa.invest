@@ -381,11 +381,11 @@
       <div class="field">
         <label for="f-stage">Стадія</label>
         <select id="f-stage">
+          <option value="cold">Нові ліди</option>
           <option value="qualification">Кваліфікація</option>
           <option value="qualified">Якісний лід</option>
           <option value="investor">Інвестор · Оффер</option>
           <option value="client">Клієнт</option>
-          <option value="cold">Холодна база</option>
         </select>
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
@@ -459,14 +459,21 @@
 
 <script>
 (function(){
-  const STAGES = [
+  // Логічний порядок лійки (для степера й переходів між стадіями):
+  // нові -> кваліфікація -> якісний лід -> інвестор -> клієнт.
+  const ALL_STAGES = [
+    {key:'cold', label:'Нові ліди', color:'var(--stage-cold)'},
     {key:'qualification', label:'Кваліфікація', color:'var(--stage-qualification)'},
     {key:'qualified', label:'Якісний лід', color:'var(--stage-qualified)'},
     {key:'investor', label:'Інвестор · Оффер', color:'var(--stage-investor)'},
     {key:'client', label:'Клієнт', color:'var(--stage-client)'},
-    {key:'cold', label:'Холодна база', color:'var(--stage-cold)'},
   ];
-  const stageIndex = k => STAGES.findIndex(s=>s.key===k);
+  // На дошці лишаються тільки перші три стадії — інвестор і клієнт
+  // живуть окремо, у вкладці «Угоди».
+  const BOARD_STAGES = ALL_STAGES.slice(0, 3);
+  const DEAL_STAGE_KEYS = ['investor', 'client'];
+  const stageIndex = k => ALL_STAGES.findIndex(s=>s.key===k);
+  const stageLabel = k => ALL_STAGES.find(s=>s.key===k)?.label || k;
 
   const boardEl = document.getElementById('board');
   const statsEl = document.getElementById('stats');
@@ -542,18 +549,21 @@
   function renderStats(){
     const total = leads.length;
     const byStage = {};
-    STAGES.forEach(s => byStage[s.key] = 0);
+    ALL_STAGES.forEach(s => byStage[s.key] = 0);
     let commissionSum = 0;
+    let dealsCount = 0;
     const today = todayStr();
     let dueCount = 0;
     leads.forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
+      if(DEAL_STAGE_KEYS.includes(l.stage)) dealsCount++;
       if(l.stage === 'client') commissionSum += parseCommission(l.commission);
       if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
     const tiles = [
       {label:'Усього лідів', value: total},
-      ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
+      ...BOARD_STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
+      {label:'Угоди (інвестор+клієнт)', value: dealsCount, color:'var(--stage-investor)'},
       {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
       {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', color:'var(--good)'},
     ];
@@ -611,7 +621,7 @@
       }
     }
     return `
-      <div class="card" draggable="true" style="border-left-color:${STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
+      <div class="card" draggable="true" style="border-left-color:${ALL_STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
         <div class="name">${esc(l.name || '(без імені)')}</div>
         <div class="phone">${esc(l.phone || '—')}</div>
         ${snippet ? `<div class="snippet">${esc(snippet)}</div>` : ''}
@@ -624,7 +634,7 @@
           ${chatLinksHtml(l.phone)}
           <div class="stepper">
             <button data-move="prev" data-id="${esc(l.id)}" ${idx<=0?'disabled':''} title="Назад по воронці">‹</button>
-            <button data-move="next" data-id="${esc(l.id)}" ${idx>=STAGES.length-1?'disabled':''} title="Вперед по воронці">›</button>
+            <button data-move="next" data-id="${esc(l.id)}" ${idx>=ALL_STAGES.length-1?'disabled':''} title="Вперед по воронці — просуне в «Угоди», коли лід стане інвестором">›</button>
           </div>
         </div>
       </div>
@@ -640,7 +650,7 @@
 
   function renderBoard(){
     const filtered = leads.filter(matchesQuery);
-    boardEl.innerHTML = STAGES.map(stage => {
+    boardEl.innerHTML = BOARD_STAGES.map(stage => {
       const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
       return `
         <div class="column" data-stage="${stage.key}">
@@ -671,7 +681,7 @@
       .sort((a,b)=> (a.nextActionAt+ (a.nextActionTime||'')).localeCompare(b.nextActionAt + (b.nextActionTime||'')));
     tasksListEl.innerHTML = rows.length ? rows.map(l => `
       <div class="task-list-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
-        <span class="badge" style="background:var(--accent-soft); color:var(--accent);">${esc(STAGES.find(s=>s.key===l.stage)?.label || l.stage)}</span>
+        <span class="badge" style="background:var(--accent-soft); color:var(--accent);">${esc(stageLabel(l.stage))}</span>
         <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
         <span class="twhat">${esc(l.nextAction || '')}</span>
         <span class="twhen">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
@@ -680,7 +690,7 @@
   }
 
   function renderDealsView(){
-    const deals = leads.filter(l => l.stage === 'client');
+    const deals = leads.filter(l => DEAL_STAGE_KEYS.includes(l.stage));
     populateMonthFilter(
       dealMonthFilterEl,
       [...new Set(deals.filter(l=>l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
@@ -692,11 +702,14 @@
       .sort((a,b)=> (b.dealDate||'').localeCompare(a.dealDate||''));
     dealsListEl.innerHTML = rows.length ? rows.map(l => {
       const commission = parseCommission(l.commission);
+      const snippet = l.dealInfo || l.decision || l.diagnosis || l.proposal || '—';
+      const stageColor = l.stage === 'client' ? 'var(--stage-client)' : 'var(--stage-investor)';
       return `
       <div class="task-list-row" data-id="${esc(l.id)}">
+        <span class="badge" style="background:${stageColor}; color:#fff;">${esc(stageLabel(l.stage))}</span>
         ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
         <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
-        <span class="twhat">${esc(l.dealInfo || '—')}</span>
+        <span class="twhat">${esc(snippet)}</span>
         <span class="twhen">${l.dealDate ? esc(l.dealDate) : 'дата не вказана'}${commission ? ' · $' + commission.toLocaleString('uk-UA') : ''}</span>
       </div>
     `;
@@ -918,8 +931,8 @@
     const l = leads.find(x=>x.id===id);
     if(!l) return;
     const idx = stageIndex(l.stage);
-    const next = dir==='next' ? Math.min(idx+1, STAGES.length-1) : Math.max(idx-1,0);
-    if(next!==idx) setStage(id, STAGES[next].key);
+    const next = dir==='next' ? Math.min(idx+1, ALL_STAGES.length-1) : Math.max(idx-1,0);
+    if(next!==idx) setStage(id, ALL_STAGES[next].key);
   }
 
   function wireDragAndDrop(){
