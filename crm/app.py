@@ -9,6 +9,7 @@ from flask import Flask, jsonify, request, send_from_directory
 
 import db
 import telegram_bot
+import quiz_bot
 from notifications import notify_admin
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
@@ -174,6 +175,8 @@ def _digest_loop():
 def _start_background_workers():
     if telegram_bot.bot:
         threading.Thread(target=telegram_bot.start_polling, daemon=True).start()
+    if quiz_bot.bot:
+        threading.Thread(target=quiz_bot.start_polling, daemon=True).start()
     if ENABLE_DAILY_DIGEST:
         threading.Thread(target=_digest_loop, daemon=True).start()
 

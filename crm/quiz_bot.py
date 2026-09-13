@@ -1,0 +1,173 @@
+"""Окремий Telegram-бот — заміна платного блоку SendPulse.
+
+Проводить того самого клієнта через ті самі кваліфікаційні питання
+(регіон -> країна, якщо закордон -> готовність чекати будівництво ->
+формат інвестування -> термін угоди), показує картку(и) відповідного
+проекту, забирає телефон і зручний час дзвінка, і одразу пише лід у
+CRM (db.create_lead) — без SendPulse, без вебхука, без оплати.
+
+Тексти питань і карток винесені в crm/quiz_data.py — саме той файл
+варто редагувати, коли міняється контент. Тут — тільки механіка.
+"""
+import os
+
+import telebot
+from telebot import types
+
+import quiz_data as qd
+from db import create_lead
+from notifications import notify_admin
+
+TOKEN = os.environ.get("QUIZ_BOT_TOKEN")
+bot = telebot.TeleBot(TOKEN) if TOKEN else None
+
+# Стан кожного чату тримаємо в пам'яті процесу — це нормально для
+# короткого лінійного квізу (кілька хвилин), не потребує окремої
+# таблиці в базі. chat_id -> {"step": int, "answers": {...}}
+_sessions = {}
+
+# Порядок кроків. Крок "country" не в QUESTIONS (див. quiz_data.py) —
+# вставляємо його вручну одразу після region, і тільки якщо треба.
+_BASE_STEPS = list(qd.QUESTIONS)
+
+
+def _step_for(session):
+    """Повертає (question_dict | None, is_country_step: bool)."""
+    idx = session["step"]
+    answers = session["answers"]
+
+    # Крок 0 — регіон (завжди перший, з qd.QUESTIONS[0]).
+    if idx == 0:
+        return qd.Q_REGION, False
+
+    # Після регіону: якщо обрали "abroad" і країну ще не питали — питаємо.
+    if idx == 1 and answers.get("region") == "abroad" and "country" not in answers:
+        return qd.Q_COUNTRY, True
+
+    # Рахуємо, скільки "базових" питань (region, construction, format,
+    # timing) уже позаду, компенсуючи вставлений крок country.
+    base_idx = idx if not (answers.get("region") == "abroad") else idx - 1
+    if 0 <= base_idx < len(_BASE_STEPS):
+        return _BASE_STEPS[base_idx], False
+
+    return None, False
+
+
+def _keyboard_for(question):
+    kb = types.InlineKeyboardMarkup()
+    for label, value in question["options"]:
+        kb.add(types.InlineKeyboardButton(label, callback_data=f"{question['key']}:{value}"))
+    return kb
+
+
+def _contact_keyboard():
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    kb.add(types.KeyboardButton("📱 Поділитись контактом", request_contact=True))
+    return kb
+
+
+def _send_question(chat_id, question):
+    bot.send_message(chat_id, question["text"], reply_markup=_keyboard_for(question))
+
+
+def _send_cards_and_ask_phone(chat_id, session):
+    answers = session["answers"]
+    if answers.get("region") == "abroad":
+        bot.send_message(chat_id, qd.ABROAD_FALLBACK_TEXT)
+    else:
+        for card in qd.UKRAINE_CARDS:
+            bot.send_message(chat_id, card["text"])
+    session["step"] = "awaiting_phone"
+    bot.send_message(chat_id, qd.ASK_PHONE_TEXT, reply_markup=_contact_keyboard())
+
+
+def _answers_summary(answers):
+    labels = {
+        "region": dict(qd.Q_REGION["options"]),
+        "country": dict(qd.Q_COUNTRY["options"]),
+        "construction": dict(qd.Q_CONSTRUCTION["options"]),
+        "format": dict(qd.Q_FORMAT["options"]),
+        "timing": dict(qd.Q_TIMING["options"]),
+    }
+    # invert value->label per question so we can print human text
+    lines = []
+    for key, question in (
+        ("region", qd.Q_REGION), ("country", qd.Q_COUNTRY),
+        ("construction", qd.Q_CONSTRUCTION), ("format", qd.Q_FORMAT),
+        ("timing", qd.Q_TIMING),
+    ):
+        value = answers.get(key)
+        if value is None:
+            continue
+        label = next((lbl for lbl, val in question["options"] if val == value), value)
+        lines.append(f"— {label}")
+    return "\n".join(lines)
+
+
+if bot:
+
+    @bot.message_handler(commands=["start"])
+    def handle_start(message):
+        chat_id = message.chat.id
+        _sessions[chat_id] = {"step": 0, "answers": {}}
+        bot.send_message(chat_id, qd.INTRO_TEXT)
+        _send_question(chat_id, qd.Q_REGION)
+
+    @bot.callback_query_handler(func=lambda c: True)
+    def handle_answer(call):
+        chat_id = call.message.chat.id
+        session = _sessions.get(chat_id)
+        if not session or not isinstance(session.get("step"), int):
+            bot.answer_callback_query(call.id, "Почніть заново командою /start")
+            return
+
+        key, value = call.data.split(":", 1)
+        session["answers"][key] = value
+        bot.answer_callback_query(call.id)
+
+        session["step"] += 1
+        question, _ = _step_for(session)
+        if question:
+            _send_question(chat_id, question)
+        else:
+            _send_cards_and_ask_phone(chat_id, session)
+
+    @bot.message_handler(content_types=["contact"])
+    def handle_contact(message):
+        chat_id = message.chat.id
+        session = _sessions.get(chat_id)
+        if not session or session.get("step") != "awaiting_phone":
+            return
+        session["phone"] = message.contact.phone_number
+        session["name"] = f"{message.contact.first_name or ''} {message.contact.last_name or ''}".strip()
+        session["step"] = "awaiting_time"
+        bot.send_message(chat_id, qd.ASK_TIMING_CALL_TEXT, reply_markup=types.ReplyKeyboardRemove())
+
+    @bot.message_handler(func=lambda m: True, content_types=["text"])
+    def handle_text(message):
+        chat_id = message.chat.id
+        session = _sessions.get(chat_id)
+        if not session or session.get("step") != "awaiting_time":
+            return  # поза сценарієм квізу — ігноруємо (чи можна тут /start підказати)
+
+        answers = session["answers"]
+        notes = "Пройшов квіз «Підібрати проект»:\n" + _answers_summary(answers)
+        notes += f"\nЗручний час дзвінка: {message.text}"
+
+        lead = create_lead({
+            "name": session.get("name") or message.from_user.full_name or "",
+            "phone": session.get("phone", ""),
+            "stage": "cold",
+            "leadSource": "quiz",
+            "notes": notes,
+        })
+        notify_admin(f"🆕 Новий лід (квіз): {lead['name'] or lead['phone']}")
+        bot.send_message(chat_id, qd.THANK_YOU_TEXT)
+        del _sessions[chat_id]
+
+
+def start_polling():
+    if not bot:
+        print("QUIZ_BOT_TOKEN не задано — квіз-бот вимкнено.")
+        return
+    bot.infinity_polling(skip_pending=True)
