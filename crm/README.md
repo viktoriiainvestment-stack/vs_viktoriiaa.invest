@@ -1,7 +1,7 @@
-# Лійка — автономна CRM з Telegram, Viber і Facebook/Instagram Ads
+# Лійка — автономна CRM з Telegram-ботом і лід-вебхуком
 
 Повноцінний застосунок (не Claude Artifact): Flask-сервер, SQLite-база,
-CRM-бот Telegram, Viber-бот і вебхук Facebook/Instagram Lead Ads — усі
+CRM-бот Telegram і універсальний вебхук для лідів з реклами/квіз-ботів —
 автоматично створюють ліди і шлють вам сповіщення. Живе на **вашому**
 хостингу, код — тут, у репозиторії.
 
@@ -9,15 +9,11 @@ CRM-бот Telegram, Viber-бот і вебхук Facebook/Instagram Lead Ads �
 
 - `db.py` — SQLite (`crm.db`), таблиці `leads` і `scripts`.
 - `app.py` — Flask: віддає дашборд (`dashboard.html`), REST API
-  (`/api/leads`, `/api/scripts`), приймає вебхуки Viber (`/viber/webhook`)
-  і Meta Lead Ads (`/meta/webhook`), запускає Telegram-бота у фоновому потоці.
+  (`/api/leads`, `/api/scripts`), приймає ліди ззовні
+  (`/api/webhook/lead`), запускає Telegram-бота у фоновому потоці.
 - `telegram_bot.py` — окремий бот під ліди (не плутати з `../bot.py`,
   який генерує контент-план). Приймає контакт/повідомлення від клієнта →
   створює лід зі стадією «Холодна база» → шле вам сповіщення.
-- `viber_bot.py` — те саме через Viber (вебхук).
-- `meta_leads.py` — обробляє вебхук Facebook/Instagram Lead Ads:
-  Meta повідомляє лише `leadgen_id`, самі відповіді (ім'я, телефон,
-  email, додаткові питання) підтягуються окремим запитом до Graph API.
 - `notifications.py` — пуш вам у Telegram про нові ліди й завдання.
 - `seed.py` — одноразово наповнює базу лідами, які були актуальні в
   Claude-артефакті на момент перенесення (запускається сам, тільки
@@ -27,13 +23,13 @@ CRM-бот Telegram, Viber-бот і вебхук Facebook/Instagram Lead Ads �
   / «Не актуально», фільтр по місяцю, графік конверсії, дублікати,
   скрипти, CSV-експорт. Захищена спільним токеном (`ADMIN_TOKEN`).
   На відміну від артефакта, тут «Надіслати» справді йде мовчки через
-  бота, якщо лід прийшов з Telegram/Viber (є `channel` + `externalId`);
-  для решти — як і в артефакті, відкриває чат з готовим текстом.
+  бота, якщо лід прийшов з Telegram (є `channel` + `externalId`); для
+  решти — як і в артефакті, відкриває чат з готовим текстом.
 
 **Перейменування полів.** У БД `source` артефакта (звідки лід — Instagram,
-рекомендація тощо) стало `leadSource`, бо в застосунку `source` вже
-означає канал, яким лід зайшов (`telegram` / `viber` / `facebook`) —
-перейменований на `channel`, щоб не плутати одне з іншим.
+реклама, квіз тощо) стало `leadSource`, бо в застосунку `source` вже
+означає канал, яким лід зайшов (`telegram` / `webhook`) — перейменований
+на `channel`, щоб не плутати одне з іншим.
 
 ## Локальний запуск
 
@@ -48,101 +44,56 @@ python app.py               # http://localhost:5000
 
 ## Що потрібно від вас (я не можу створити це сам)
 
-1. **Telegram-бот для лідів**: напишіть [@BotFather](https://t.me/BotFather) →
-   `/newbot` → отримаєте токен → `TELEGRAM_CRM_BOT_TOKEN`.
-   Це окремий бот від того, що вже є в `bot.py` (там — контент-план).
-2. **Ваш chat_id**: після запуску напишіть своєму новому боту `/id` —
-   він відповість вашим `chat_id`. Впишіть у `ADMIN_TELEGRAM_CHAT_ID`.
-3. **Viber-бот**: створіть Public Account на
-   [partners.viber.com](https://partners.viber.com) → увімкніть «Bot» →
-   скопіюйте токен у `VIBER_BOT_TOKEN`.
-4. **ADMIN_TOKEN**: придумайте будь-який довгий пароль — це ключ входу
+1. **Telegram-бот для лідів і сповіщень**: напишіть
+   [@BotFather](https://t.me/BotFather) → `/newbot` → отримаєте токен →
+   `TELEGRAM_CRM_BOT_TOKEN`. Це окремий бот від того, що вже є в
+   `bot.py` (там — контент-план) і від вашого квіз-бота
+   (`t.me/investmentobject_bot`) — цей потрібен CRM для сповіщень і для
+   реального «Надіслати» з дашборду.
+2. **Ваш chat_id**: після деплою напишіть новому боту `/id` — він
+   відповість вашим `chat_id`. Впишіть у `ADMIN_TELEGRAM_CHAT_ID`.
+3. **ADMIN_TOKEN**: придумайте будь-який довгий пароль — це ключ входу
    в дашборд (просить один раз, зберігає в браузері).
+4. **LEAD_WEBHOOK_TOKEN**: придумайте ще один довгий рядок — ним
+   захищений `/api/webhook/lead` (див. нижче).
 5. **Хостинг**: код сам по собі нікуди не задеплоєний — потрібен сервер,
    що працює 24/7 (Railway, Render, Fly.io, звичайний VPS). У репозиторії
    вже є `Procfile` (`web: gunicorn --chdir crm --bind 0.0.0.0:$PORT app:app`)
    — підходить для Railway/Render «з коробки»: підключаєте репозиторій,
    вказуєте змінні середовища з `.env.example`, деплой.
-6. **Після деплою — прив'язати вебхук Viber** (Viber вимагає публічний
-   HTTPS, тому це не можна зробити локально): одноразово виконайте
-   ```python
-   from viber_bot import register_webhook
-   register_webhook("https://ваш-домен/viber/webhook")
-   ```
-7. **Instagram-реклама і квіз-бот — простіший шлях через Zapier/Make**
-   (рекомендовано, якщо не хочете возитись з Meta App Review):
+6. **Instagram-реклама і квіз-бот → `/api/webhook/lead`**:
 
-   Замість прямої інтеграції з Graph API є універсальний ендпоінт
-   `POST /api/webhook/lead` — приймає JSON
+   Один універсальний ендпоінт `POST /api/webhook/lead` — приймає JSON
    `{"name": "...", "phone": "...", "source": "instagram-ads" | "quiz" | ...}`
    з заголовком `X-Webhook-Token: <LEAD_WEBHOOK_TOKEN>` (або
    `?token=<LEAD_WEBHOOK_TOKEN>` у URL) і одразу створює лід зі стадією
    «Холодна база».
 
-   1. Придумайте будь-який довгий рядок → `LEAD_WEBHOOK_TOKEN`.
-   2. У [Zapier](https://zapier.com) (безкоштовного плану зазвичай
-      достатньо) створіть Zap:
-      - **Trigger**: вбудована інтеграція «Facebook Lead Ads» (New Lead)
-        — авторизуєтесь через Facebook, обираєте сторінку й форму. Не
-        потрібен ні App Secret, ні Page Access Token, ні App Review —
-        Zapier бере це на себе.
-      - **Action**: «Webhooks by Zapier» → POST →
-        `https://ваш-домен/api/webhook/lead`, заголовок
-        `X-Webhook-Token: <ваш LEAD_WEBHOOK_TOKEN>`, тіло — поля
-        `name`/`phone` з форми, `source: "instagram-ads"`.
-   3. Для квіз-бота — якщо він на ManyChat/BotHelp/SalesBot чи іншій
-      платформі, майже завжди є або пряма інтеграція з Zapier, або
-      власний вебхук/HTTP-запит у налаштуваннях сценарію в кінці квізу.
-      В обох випадках кінцевий крок той самий: POST на
-      `/api/webhook/lead` з `source: "quiz"`.
-
-   Якщо пізніше захочете офіційну пряму інтеграцію (без Zapier
-   посередині) — код для цього теж є (`meta_leads.py`, вебхук
-   `/meta/webhook`), і повний покроковий шлях через Meta for Developers
-   з App Review нижче.
-
-   <details>
-   <summary>Пряма інтеграція з Meta Graph API (без Zapier)</summary>
-
-   1. [developers.facebook.com](https://developers.facebook.com) →
-      «Мої застосунки» → «Створити застосунок» → тип «Business».
-   2. У застосунку скопіюйте **App Secret** (Налаштування → Основні) →
-      `META_APP_SECRET`.
-   3. Придумайте будь-який рядок-пароль → `META_VERIFY_TOKEN` (Meta
-      попросить його повторити при підписці на вебхук).
-   4. Додайте продукт **Webhooks** → об'єкт **Page** → підпишіться на
-      поле `leadgen` → URL зворотного виклику:
-      `https://ваш-домен/meta/webhook`, Verify Token — той самий, що в
-      `META_VERIFY_TOKEN`.
-   5. Отримайте **Page Access Token** для сторінки, з якої йде реклама
-      (Graph API Explorer або через Business Manager → System User з
-      правами `leads_retrieval` і `pages_show_list`) → бажано зробити
-      його довгостроковим (never-expiring) через System User →
-      `META_PAGE_ACCESS_TOKEN`.
-   6. Підпишіть саму сторінку на застосунок: `POST
-      /{page-id}/subscribed_apps?subscribed_fields=leadgen` з
-      Page Access Token.
-   7. У Business Manager застосунок має пройти **App Review** на
-      дозвіл `leads_retrieval`, якщо реклама не тестова — без цього
-      вебхук працюватиме лише для сторінок, де ви адмін і застосунок у
-      Development-режимі.
-   </details>
-
-Ліди з Facebook/Instagram позначені бейджем «Facebook Ads» лише коли
-йдуть через пряму інтеграцію (`channel: facebook`); через Zapier-шлях
-вище лід просто отримує `leadSource`, яке ви вказали. Прямого каналу
-для відповіді з дашборду в таких лідів немає (Meta/Zapier не дають
-messenger-id через Lead Ads) — телефон лежить у картці ліда, дзвоните
-або пишете вручну (або в Instagram Direct, якщо клієнт писав звідти).
+   - **Instagram-реклама**: у [Zapier](https://zapier.com) (безкоштовного
+     плану зазвичай достатньо) створіть Zap — **Trigger**: вбудована
+     інтеграція «Facebook Lead Ads» (New Lead), авторизуєтесь через
+     Facebook, обираєте сторінку й форму (не потрібен App Secret, Page
+     Access Token чи App Review — Zapier бере це на себе). **Action**:
+     «Webhooks by Zapier» → POST → `https://ваш-домен/api/webhook/lead`,
+     заголовок `X-Webhook-Token: <ваш LEAD_WEBHOOK_TOKEN>`, тіло — поля
+     `name`/`phone` з форми, `source: "instagram-ads"`.
+   - **Ваш квіз-бот** (`t.me/investmentobject_bot`) — спосіб підключення
+     залежить від того, на чому він зроблений (готовий конструктор чи
+     власний код) — уточнюємо це окремо, щоб дати точні кроки саме під
+     ваш бот.
+   - **Instagram Direct** (органічні повідомлення поза квізом) —
+     Instagram Messaging API вимагає ще складнішої верифікації, ніж
+     Lead Ads; практичніше просто вносити такі ліди вручну кнопкою
+     «Додати лід» у дашборді.
 
 Telegram-бот працює через polling — вебхук не потрібен, спрацює одразу
 після деплою.
 
 ## Що вміє застосунок
 
-- **Автозахоплення лідів**: клієнт пише боту в Telegram чи Viber, або
-  заповнює форму в рекламі Facebook/Instagram → лід одразу з'являється
-  в «Нові ліди», номер (якщо є) підтягується автоматично.
+- **Автозахоплення лідів**: клієнт пише CRM-боту в Telegram, або лід
+  прилітає через `/api/webhook/lead` (реклама, квіз-бот) → одразу
+  з'являється в «Нові ліди», номер (якщо є) підтягується автоматично.
 - **Сповіщення**: кожен новий лід і завдання, дата яких настала —
   прилітає вам у Telegram.
 - **Воронка**: Нові ліди → Кваліфікація → Якісний лід на дошці;
@@ -151,7 +102,7 @@ Telegram-бот працює через polling — вебхук не потрі
   зв'язатись знову через 6 місяців.
 - **Скрипти**: бібліотека готових текстів у дашборді — обираєте лід →
   обираєте скрипт (або пишете свій текст) → «Надіслати». Для
-  Telegram/Viber-лідів це реальна тиха відправка через бота; для решти —
+  Telegram-лідів це реальна тиха відправка через бота; для решти —
   відкриває чат з готовим текстом.
 - **Завдання**: у картці ліда — поле «Наступний крок» + дата й час;
   дашборд показує прострочене й сьогоднішнє зверху й у вкладці «Задачі»;

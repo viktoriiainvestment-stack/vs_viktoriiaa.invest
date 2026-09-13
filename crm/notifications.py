@@ -9,7 +9,7 @@ def notify_admin(text):
     """Push a message to the admin's own Telegram chat.
 
     Uses the raw Bot API (not the telebot instance) so it works from any
-    process — the Telegram bot, the Viber webhook, or the daily digest —
+    process — the Telegram bot, the lead webhook, or the daily digest —
     without them importing each other.
     """
     if not TELEGRAM_CRM_BOT_TOKEN or not ADMIN_TELEGRAM_CHAT_ID:

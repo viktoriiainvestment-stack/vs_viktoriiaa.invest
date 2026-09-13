@@ -9,8 +9,6 @@ from flask import Flask, jsonify, request, send_from_directory
 
 import db
 import telegram_bot
-import viber_bot
-import meta_leads
 from notifications import notify_admin
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
@@ -82,15 +80,10 @@ def api_send_to_lead(lead_id):
     text = (request.get_json(force=True) or {}).get("text", "").strip()
     if not text:
         return jsonify({"error": "text is required"}), 400
-    if not lead.get("externalId"):
-        return jsonify({"error": "У цього ліда немає каналу (Telegram/Viber) для надсилання"}), 400
+    if not lead.get("externalId") or lead["channel"] != "telegram":
+        return jsonify({"error": "У цього ліда немає Telegram-каналу для надсилання"}), 400
 
-    if lead["channel"] == "telegram":
-        telegram_bot.send_message(lead["externalId"], text)
-    elif lead["channel"] == "viber":
-        viber_bot.send_message(lead["externalId"], text)
-    else:
-        return jsonify({"error": f"Для каналу «{lead['channel']}» немає надсилання"}), 400
+    telegram_bot.send_message(lead["externalId"], text)
 
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     notes = (lead.get("notes") or "") + f"\n[{stamp}] Надіслано: {text}"
@@ -131,45 +124,13 @@ def api_delete_script(script_id):
     return "", 204
 
 
-# ---- Viber webhook (public, verified by Viber's own signature via the token round-trip) ----
-
-@app.route("/viber/webhook", methods=["POST"])
-def viber_webhook():
-    payload = request.get_json(force=True, silent=True) or {}
-    reply = viber_bot.handle_event(payload)
-    return jsonify(reply or {})
-
-
-# ---- Meta (Facebook/Instagram) Lead Ads webhook ----
-
-@app.route("/meta/webhook", methods=["GET"])
-def meta_webhook_verify():
-    # Meta's one-time handshake when you register the webhook URL.
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge", "")
-    if mode == "subscribe" and meta_leads.META_VERIFY_TOKEN and token == meta_leads.META_VERIFY_TOKEN:
-        return challenge, 200
-    return "forbidden", 403
-
-
-@app.route("/meta/webhook", methods=["POST"])
-def meta_webhook_receive():
-    signature = request.headers.get("X-Hub-Signature-256", "")
-    if not meta_leads.verify_signature(request.get_data(), signature):
-        return "invalid signature", 403
-    payload = request.get_json(force=True, silent=True) or {}
-    meta_leads.handle_webhook_payload(payload)
-    return "EVENT_RECEIVED", 200
-
-
-# ---- generic lead webhook (Zapier / Make / ManyChat / any quiz tool) ----
+# ---- generic lead webhook (Zapier / Make / your Telegram quiz bot / anything) ----
 #
-# Simpler alternative to the raw Meta Lead Ads integration above: point
-# Zapier's built-in "Facebook Lead Ads" trigger (or your quiz bot's own
-# webhook/Zapier step) at this URL with a "Webhooks by Zapier" POST action,
-# body {"name": "...", "phone": "...", "source": "instagram-ads" | "quiz" | ...}.
-# No Meta App Review, no App Secret, no Page Access Token needed on our side.
+# One universal way in for leads that don't come through the CRM's own
+# Telegram bot: Instagram ads via Zapier's "Facebook Lead Ads" trigger,
+# or a direct call from your other Telegram bot / quiz tool when it
+# finishes qualifying someone. POST here with a "Webhooks by Zapier"
+# action or a plain HTTP request, body {"name", "phone", "source", "notes"}.
 
 @app.route("/api/webhook/lead", methods=["POST"])
 def webhook_lead():
