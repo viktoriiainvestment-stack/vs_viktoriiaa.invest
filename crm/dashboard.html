@@ -1389,7 +1389,7 @@
         bannerEl.hidden = true;
         render();
         if(deepLinkId && !deepLinkHandled){
-          const target = leads.find(l => l.id === deepLinkId);
+          const target = leads.find(l => l.id === Number(deepLinkId));
           if(target){ deepLinkHandled = true; openDrawer(target); }
         }
       },
