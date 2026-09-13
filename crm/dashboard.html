@@ -1191,7 +1191,7 @@
       col.addEventListener('drop', (e) => {
         e.preventDefault();
         col.classList.remove('drag-over');
-        const id = e.dataTransfer.getData('text/plain');
+        const id = Number(e.dataTransfer.getData('text/plain'));
         if(id) setStage(id, col.dataset.stage);
       });
     });
@@ -1201,19 +1201,19 @@
     const moveBtn = e.target.closest('[data-move]');
     if(moveBtn){
       e.stopPropagation();
-      moveStage(moveBtn.dataset.id, moveBtn.dataset.move);
+      moveStage(Number(moveBtn.dataset.id), moveBtn.dataset.move);
       return;
     }
     if(e.target.closest('.card-chat')) return;
     const card = e.target.closest('.card');
     if(card){
-      const lead = leads.find(l=>l.id===card.dataset.id);
+      const lead = leads.find(l=>l.id===Number(card.dataset.id));
       if(lead) openDrawer(lead);
     }
   });
   taskList.addEventListener('click', (e) => {
     const row = e.target.closest('.task-row');
-    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
   });
 
   document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
@@ -1263,17 +1263,17 @@
   });
   tasksListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
-    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
   });
   dealsListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
-    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
   });
   inactiveListEl.addEventListener('click', (e)=>{
     const reengageId = e.target.closest('[data-reengage]')?.dataset.reengage;
-    if(reengageId){ e.stopPropagation(); reengageLater(reengageId); return; }
+    if(reengageId){ e.stopPropagation(); reengageLater(Number(reengageId)); return; }
     const row = e.target.closest('.task-list-row');
-    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
   });
 
   // ---- scripts panel ----
