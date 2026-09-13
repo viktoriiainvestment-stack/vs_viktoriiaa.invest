@@ -1,4 +1,4 @@
-<title>Лійка</title>
+<title>Воронка</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
 <style>
@@ -324,6 +324,7 @@
       <div class="tabs">
         <button class="tab-btn active" id="tabBoardBtn" type="button">Воронка</button>
         <button class="tab-btn" id="tabTasksBtn" type="button">Задачі</button>
+        <button class="tab-btn" id="tabDealsBtn" type="button">Угоди</button>
       </div>
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -343,10 +344,6 @@
   <section class="stats" id="stats"></section>
 
   <div id="boardView">
-    <div class="filters-row" style="margin-bottom:14px;">
-      <label for="clientMonthFilter">Місяць угод (колонка «Клієнт»):</label>
-      <select id="clientMonthFilter"><option value="">Усі місяці</option></select>
-    </div>
     <main class="board" id="board"></main>
   </div>
 
@@ -356,6 +353,14 @@
       <select id="taskMonthFilter"><option value="">Усі місяці</option></select>
     </div>
     <div class="tasks-list" id="tasksList"></div>
+  </div>
+
+  <div id="dealsView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <label for="dealMonthFilter">Місяць угоди:</label>
+      <select id="dealMonthFilter"><option value="">Усі місяці</option></select>
+    </div>
+    <div class="tasks-list" id="dealsList"></div>
   </div>
 </div>
 
@@ -475,11 +480,14 @@
   const toastEl = document.getElementById('toast');
   const boardView = document.getElementById('boardView');
   const tasksView = document.getElementById('tasksView');
+  const dealsView = document.getElementById('dealsView');
   const tasksListEl = document.getElementById('tasksList');
-  const clientMonthFilterEl = document.getElementById('clientMonthFilter');
+  const dealsListEl = document.getElementById('dealsList');
   const taskMonthFilterEl = document.getElementById('taskMonthFilter');
+  const dealMonthFilterEl = document.getElementById('dealMonthFilter');
   const tabBoardBtn = document.getElementById('tabBoardBtn');
   const tabTasksBtn = document.getElementById('tabTasksBtn');
+  const tabDealsBtn = document.getElementById('tabDealsBtn');
 
   let leads = [];
   let scripts = [];
@@ -514,17 +522,6 @@
     return new Date().toISOString().slice(0,10);
   }
 
-  function parseDealValue(text){
-    if(!text) return 0;
-    let sum = 0;
-    const re = /(\d+(?:[.,]\d+)?)\s*(к\$|тис\$|k\$)/gi;
-    let m;
-    while((m = re.exec(text))){
-      sum += parseFloat(m[1].replace(',', '.'));
-    }
-    return sum;
-  }
-
   function parseCommission(text){
     if(!text) return 0;
     let sum = 0;
@@ -546,23 +543,18 @@
     const total = leads.length;
     const byStage = {};
     STAGES.forEach(s => byStage[s.key] = 0);
-    let dealSum = 0;
     let commissionSum = 0;
     const today = todayStr();
     let dueCount = 0;
     leads.forEach(l => {
       byStage[l.stage] = (byStage[l.stage]||0) + 1;
-      if(l.stage === 'client'){
-        dealSum += parseDealValue(l.dealInfo);
-        commissionSum += parseCommission(l.commission);
-      }
+      if(l.stage === 'client') commissionSum += parseCommission(l.commission);
       if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
     const tiles = [
       {label:'Усього лідів', value: total},
       ...STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
       {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
-      {label:'Сума угод (оцінка)', value: dealSum ? '≈' + dealSum.toLocaleString('uk-UA') + ' тис $' : '—'},
       {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', color:'var(--good)'},
     ];
     statsEl.innerHTML = tiles.map(t => `
@@ -647,19 +639,9 @@
   }
 
   function renderBoard(){
-    populateMonthFilter(
-      clientMonthFilterEl,
-      [...new Set(leads.filter(l=>l.stage==='client' && l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
-      true
-    );
-    const clientMonth = clientMonthFilterEl.value;
     const filtered = leads.filter(matchesQuery);
     boardEl.innerHTML = STAGES.map(stage => {
-      let items = filtered.filter(l => l.stage === stage.key);
-      if(stage.key === 'client' && clientMonth){
-        items = items.filter(l => (l.dealDate||'').slice(0,7) === clientMonth);
-      }
-      items = items.sort((a,b)=>(a.order||0)-(b.order||0));
+      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
       return `
         <div class="column" data-stage="${stage.key}">
           <div class="column-head">
@@ -697,11 +679,36 @@
     `).join('') : '<div class="empty-state">Немає завдань за цей період</div>';
   }
 
+  function renderDealsView(){
+    const deals = leads.filter(l => l.stage === 'client');
+    populateMonthFilter(
+      dealMonthFilterEl,
+      [...new Set(deals.filter(l=>l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
+      true
+    );
+    const dealMonth = dealMonthFilterEl.value;
+    const rows = deals
+      .filter(l => !dealMonth || (l.dealDate||'').slice(0,7) === dealMonth)
+      .sort((a,b)=> (b.dealDate||'').localeCompare(a.dealDate||''));
+    dealsListEl.innerHTML = rows.length ? rows.map(l => {
+      const commission = parseCommission(l.commission);
+      return `
+      <div class="task-list-row" data-id="${esc(l.id)}">
+        ${l.offer ? `<span class="badge">${esc(l.offer)}</span>` : ''}
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(l.dealInfo || '—')}</span>
+        <span class="twhen">${l.dealDate ? esc(l.dealDate) : 'дата не вказана'}${commission ? ' · $' + commission.toLocaleString('uk-UA') : ''}</span>
+      </div>
+    `;
+    }).join('') : '<div class="empty-state">Ще немає угод за цей період</div>';
+  }
+
   function render(){
     renderStats();
     renderTasks();
     renderBoard();
     renderTasksView();
+    renderDealsView();
   }
 
   function fillScriptSelect(){
@@ -977,14 +984,21 @@
   function switchTab(view){
     boardView.hidden = view !== 'board';
     tasksView.hidden = view !== 'tasks';
+    dealsView.hidden = view !== 'deals';
     tabBoardBtn.classList.toggle('active', view === 'board');
     tabTasksBtn.classList.toggle('active', view === 'tasks');
+    tabDealsBtn.classList.toggle('active', view === 'deals');
   }
   tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
   tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
-  clientMonthFilterEl.addEventListener('change', renderBoard);
+  tabDealsBtn.addEventListener('click', ()=>switchTab('deals'));
   taskMonthFilterEl.addEventListener('change', renderTasksView);
+  dealMonthFilterEl.addEventListener('change', renderDealsView);
   tasksListEl.addEventListener('click', (e)=>{
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
+  });
+  dealsListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
     if(row){ const lead = leads.find(l=>l.id===row.dataset.id); if(lead) openDrawer(lead); }
   });
