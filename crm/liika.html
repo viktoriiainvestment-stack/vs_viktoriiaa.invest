@@ -227,6 +227,26 @@
   }
   .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
   .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .dup-warning{
+    font-size:12.5px; font-weight:600; color:var(--danger); background:color-mix(in srgb, var(--danger) 12%, transparent);
+    border:1px solid var(--danger); border-radius:10px; padding:8px 12px; cursor:pointer;
+  }
+  .assignee-tag{font-size:11px; color:var(--ink-soft); font-weight:600;}
+
+  .funnel{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:14px 16px; margin-bottom:14px; box-shadow:var(--shadow);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .funnel-row{display:flex; align-items:center; gap:10px;}
+  .funnel-label{width:118px; flex:none; font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .funnel-track{flex:1; background:var(--surface-soft); border-radius:8px; height:26px; overflow:hidden;}
+  .funnel-fill{
+    height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px;
+    color:#fff; font-weight:700; font-size:12px; white-space:nowrap; min-width:26px;
+    transition:width .2s;
+  }
+  .funnel-pct{width:48px; flex:none; text-align:right; font-size:11.5px; color:var(--ink-faint); font-variant-numeric:tabular-nums;}
   .close-x{
     border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
     width:30px; height:30px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:16px;
@@ -336,6 +356,7 @@
         <input id="search" type="text" placeholder="Пошук за ім'ям, телефоном, офером…">
       </div>
       <button class="btn" id="scriptsBtn">📜 Скрипти</button>
+      <button class="btn" id="exportBtn">⬇️ Експорт CSV</button>
       <button class="btn primary" id="addLeadBtn">+ Новий лід</button>
     </div>
   </header>
@@ -349,6 +370,7 @@
   <section class="stats" id="stats"></section>
 
   <div id="boardView">
+    <div class="funnel" id="funnelChart"></div>
     <main class="board" id="board"></main>
   </div>
 
@@ -386,8 +408,12 @@
     <div class="section-label">🎯 Основне</div>
     <div class="field-row">
       <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
-      <div class="field"><label for="f-phone">Телефон / контакт</label><input id="f-phone" type="text" placeholder="+380…"></div>
+      <div class="field">
+        <label for="f-phone">Телефон / контакт</label>
+        <input id="f-phone" type="text" placeholder="+380…">
+      </div>
     </div>
+    <div class="dup-warning" id="dupWarning" hidden></div>
     <div class="quick-actions" id="quickActions"></div>
     <div class="field-row">
       <div class="field">
@@ -402,6 +428,10 @@
         </select>
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="f-source">Джерело</label><input id="f-source" type="text" placeholder="Рекомендація, реклама, сайт…"></div>
+      <div class="field"><label for="f-assignee">Відповідальний</label><input id="f-assignee" type="text" placeholder="Хто веде ліда"></div>
     </div>
 
     <div class="section-label">📅 Наступний крок</div>
@@ -516,6 +546,7 @@
   const tabDealsBtn = document.getElementById('tabDealsBtn');
   const tabInactiveBtn = document.getElementById('tabInactiveBtn');
   const entryMonthFilterEl = document.getElementById('entryMonthFilter');
+  const funnelEl = document.getElementById('funnelChart');
 
   let leads = [];
   let scripts = [];
@@ -544,6 +575,17 @@
     const digits = digitsOnly(phone);
     if(!digits) return '';
     return digits.startsWith('0') ? '38' + digits : digits;
+  }
+
+  function checkDuplicate(){
+    const warnEl = document.getElementById('dupWarning');
+    const intl = intlPhone(document.getElementById('f-phone').value);
+    if(!intl){ warnEl.hidden = true; return; }
+    const match = leads.find(l => l.id !== editingId && intlPhone(l.phone) === intl);
+    if(!match){ warnEl.hidden = true; return; }
+    warnEl.hidden = false;
+    warnEl.textContent = `⚠️ Такий номер уже є: ${match.name || match.phone} (${stageLabel(match.stage)}) — тиснути, щоб відкрити`;
+    warnEl.onclick = () => openDrawer(match);
   }
 
   function todayStr(){
@@ -610,6 +652,29 @@
     `).join('');
   }
 
+  function renderFunnel(){
+    const all = visibleLeads().filter(matchesQuery);
+    const stages = [
+      {label:'Нові ліди', count: all.filter(l=>l.stage==='cold').length, color:'var(--stage-cold)'},
+      {label:'Кваліфікація', count: all.filter(l=>l.stage==='qualification').length, color:'var(--stage-qualification)'},
+      {label:'Якісний лід', count: all.filter(l=>l.stage==='qualified').length, color:'var(--stage-qualified)'},
+      {label:'Угоди', count: all.filter(l=>DEAL_STAGE_KEYS.includes(l.stage)).length, color:'var(--stage-investor)'},
+    ];
+    const max = Math.max(1, ...stages.map(s=>s.count));
+    const total = stages.reduce((s,x)=>s+x.count, 0) || 1;
+    funnelEl.innerHTML = stages.map(s => {
+      const widthPct = Math.round((s.count / max) * 100);
+      const share = Math.round((s.count / total) * 100);
+      return `
+        <div class="funnel-row">
+          <span class="funnel-label">${esc(s.label)}</span>
+          <div class="funnel-track"><div class="funnel-fill" style="width:${widthPct}%; background:${s.color};">${s.count || ''}</div></div>
+          <span class="funnel-pct">${s.count ? share + '%' : ''}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
   function renderTasks(){
     const today = todayStr();
     const due = visibleLeads().filter(l => l.nextActionAt && l.nextActionAt <= today)
@@ -627,7 +692,7 @@
 
   function matchesQuery(l){
     if(!query) return true;
-    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo,l.nextAction].join(' ').toLowerCase();
+    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo,l.nextAction,l.source,l.assignee].join(' ').toLowerCase();
     return hay.includes(query);
   }
 
@@ -659,6 +724,7 @@
       <div class="card" draggable="true" style="border-left-color:${ALL_STAGES[idx]?.color || 'var(--line)'}" data-id="${esc(l.id)}">
         <div class="name">${esc(l.name || '(без імені)')}</div>
         <div class="phone">${esc(l.phone || '—')}</div>
+        ${l.assignee ? `<div class="assignee-tag">👤 ${esc(l.assignee)}</div>` : ''}
         ${snippet ? `<div class="snippet">${esc(snippet)}</div>` : ''}
         ${taskPill}
         <div class="badges">
@@ -703,7 +769,7 @@
   }
 
   function renderTasksView(){
-    const withTasks = visibleLeads().filter(l => l.nextActionAt);
+    const withTasks = visibleLeads().filter(l => l.nextActionAt && matchesQuery(l));
     populateMonthFilter(
       taskMonthFilterEl,
       [...new Set(withTasks.map(l=>l.nextActionAt.slice(0,7)))].sort().reverse(),
@@ -725,7 +791,7 @@
   }
 
   function renderDealsView(){
-    const deals = visibleLeads().filter(l => DEAL_STAGE_KEYS.includes(l.stage));
+    const deals = visibleLeads().filter(l => DEAL_STAGE_KEYS.includes(l.stage) && matchesQuery(l));
     populateMonthFilter(
       dealMonthFilterEl,
       [...new Set(deals.filter(l=>l.dealDate).map(l=>l.dealDate.slice(0,7)))].sort().reverse(),
@@ -758,7 +824,7 @@
   }
 
   function renderInactiveView(){
-    const rows = visibleLeads().filter(l => l.stage === 'inactive')
+    const rows = visibleLeads().filter(l => l.stage === 'inactive' && matchesQuery(l))
       .sort((a,b)=> (a.nextActionAt||'9999').localeCompare(b.nextActionAt||'9999'));
     inactiveListEl.innerHTML = rows.length ? rows.map(l => `
       <div class="task-list-row" data-id="${esc(l.id)}">
@@ -783,6 +849,37 @@
     catch(e){ console.error(e); }
   }
 
+  const CSV_COLUMNS = [
+    ['Ім\'я','name'], ['Телефон','phone'], ['Стадія', l=>stageLabel(l.stage)],
+    ['Оффер','offer'], ['Джерело','source'], ['Відповідальний','assignee'],
+    ['Портрет','portrait'], ['Діагностика','diagnosis'], ['Пропозиція','proposal'],
+    ['Рішення','decision'], ['Деталі угоди','dealInfo'], ['Дата угоди','dealDate'],
+    ['Комісія','commission'], ['Наступний крок','nextAction'],
+    ['Дата завдання','nextActionAt'], ['Час завдання','nextActionTime'], ['Нотатки','notes'],
+  ];
+  function csvCell(v){
+    const s = v==null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }
+  async function exportCsv(){
+    if(!window.claude || !window.claude.use){ toast('Експорт доступний лише у Claude'); return; }
+    const downloads = await window.claude.use('downloads');
+    if(!downloads){ toast('Експорт тут недоступний'); return; }
+    const rows = visibleLeads().filter(matchesQuery);
+    const header = CSV_COLUMNS.map(c => csvCell(c[0])).join(',');
+    const lines = rows.map(l => CSV_COLUMNS.map(([,key]) => csvCell(typeof key==='function' ? key(l) : l[key])).join(','));
+    const csv = '﻿' + [header, ...lines].join('\r\n');
+    const stamp = todayStr();
+    try{
+      await downloads.save({filename: `liika-leads-${stamp}.csv`, data: csv});
+      toast('Файл збережено');
+    }catch(e){
+      if(e && e.code === 'declined') return;
+      console.error(e);
+      toast('Не вдалося зберегти файл');
+    }
+  }
+
   function render(){
     populateMonthFilter(
       entryMonthFilterEl,
@@ -791,6 +888,7 @@
     );
     entryMonthQuery = entryMonthFilterEl.value;
     renderStats();
+    renderFunnel();
     renderTasks();
     renderBoard();
     renderTasksView();
@@ -884,6 +982,8 @@
     document.getElementById('f-phone').value = lead?.phone || '';
     document.getElementById('f-stage').value = lead?.stage || 'cold';
     document.getElementById('f-offer').value = lead?.offer || '';
+    document.getElementById('f-source').value = lead?.source || '';
+    document.getElementById('f-assignee').value = lead?.assignee || '';
     document.getElementById('f-prev').value = lead?.prevContact || '';
     document.getElementById('f-portrait').value = lead?.portrait || '';
     document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
@@ -904,6 +1004,7 @@
     renderQuickActions(lead);
     updateGcalLink();
     updateSendTelegramLink();
+    checkDuplicate();
     drawer.hidden = false;
     scrim.hidden = false;
     document.getElementById('f-name').focus();
@@ -918,6 +1019,8 @@
       phone: document.getElementById('f-phone').value.trim(),
       stage: document.getElementById('f-stage').value,
       offer: document.getElementById('f-offer').value.trim(),
+      source: document.getElementById('f-source').value.trim(),
+      assignee: document.getElementById('f-assignee').value.trim(),
       prevContact: document.getElementById('f-prev').value.trim(),
       portrait: document.getElementById('f-portrait').value.trim(),
       diagnosis: document.getElementById('f-diagnosis').value.trim(),
@@ -1056,6 +1159,7 @@
   });
 
   document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
   document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
   document.getElementById('saveLeadBtn').addEventListener('click', saveLead);
   document.getElementById('deleteLeadBtn').addEventListener('click', deleteLead);
@@ -1063,13 +1167,17 @@
   document.getElementById('f-next').addEventListener('input', updateGcalLink);
   document.getElementById('f-next-date').addEventListener('input', updateGcalLink);
   document.getElementById('f-next-time').addEventListener('input', updateGcalLink);
+  document.getElementById('f-phone').addEventListener('input', checkDuplicate);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
     if(s) document.getElementById('sendText').value = s.text;
     updateSendTelegramLink();
   });
   document.getElementById('sendText').addEventListener('input', updateSendTelegramLink);
-  searchEl.addEventListener('input', ()=>{ query = searchEl.value.trim().toLowerCase(); renderBoard(); });
+  searchEl.addEventListener('input', ()=>{
+    query = searchEl.value.trim().toLowerCase();
+    renderStats(); renderFunnel(); renderBoard(); renderTasksView(); renderDealsView(); renderInactiveView();
+  });
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
   });
@@ -1092,7 +1200,7 @@
   dealMonthFilterEl.addEventListener('change', renderDealsView);
   entryMonthFilterEl.addEventListener('change', ()=>{
     entryMonthQuery = entryMonthFilterEl.value;
-    renderStats(); renderTasks(); renderBoard(); renderTasksView(); renderInactiveView(); renderDealsView();
+    renderStats(); renderFunnel(); renderTasks(); renderBoard(); renderTasksView(); renderInactiveView(); renderDealsView();
   });
   tasksListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
