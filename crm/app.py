@@ -8,6 +8,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 import db
+import seed
 import telegram_bot
 import quiz_bot
 from notifications import notify_admin
@@ -19,6 +20,7 @@ ENABLE_DAILY_DIGEST = os.environ.get("ENABLE_DAILY_DIGEST", "false").lower() == 
 
 app = Flask(__name__)
 db.init_db()
+seed.run()  # no-op якщо в базі вже є хоч один лід
 
 
 def require_admin(fn):
