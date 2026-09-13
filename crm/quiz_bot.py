@@ -77,8 +77,12 @@ def _send_cards_and_ask_phone(chat_id, session):
     if answers.get("region") == "abroad":
         bot.send_message(chat_id, qd.ABROAD_FALLBACK_TEXT)
     else:
-        for card in qd.UKRAINE_CARDS:
-            bot.send_message(chat_id, card["text"])
+        matched = [c for c in qd.UKRAINE_CARDS if answers.get("format") in c["formats"]]
+        if matched:
+            for card in matched:
+                bot.send_message(chat_id, card["text"])
+        else:
+            bot.send_message(chat_id, qd.NO_MATCH_FALLBACK_TEXT)
     session["step"] = "awaiting_phone"
     bot.send_message(chat_id, qd.ASK_PHONE_TEXT, reply_markup=_contact_keyboard())
 
