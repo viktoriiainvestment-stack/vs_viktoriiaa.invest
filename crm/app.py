@@ -14,6 +14,7 @@ import meta_leads
 from notifications import notify_admin
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
+LEAD_WEBHOOK_TOKEN = os.environ.get("LEAD_WEBHOOK_TOKEN")
 DIGEST_HOUR = int(os.environ.get("DIGEST_HOUR", "9"))
 ENABLE_DAILY_DIGEST = os.environ.get("ENABLE_DAILY_DIGEST", "false").lower() == "true"
 
@@ -160,6 +161,37 @@ def meta_webhook_receive():
     payload = request.get_json(force=True, silent=True) or {}
     meta_leads.handle_webhook_payload(payload)
     return "EVENT_RECEIVED", 200
+
+
+# ---- generic lead webhook (Zapier / Make / ManyChat / any quiz tool) ----
+#
+# Simpler alternative to the raw Meta Lead Ads integration above: point
+# Zapier's built-in "Facebook Lead Ads" trigger (or your quiz bot's own
+# webhook/Zapier step) at this URL with a "Webhooks by Zapier" POST action,
+# body {"name": "...", "phone": "...", "source": "instagram-ads" | "quiz" | ...}.
+# No Meta App Review, no App Secret, no Page Access Token needed on our side.
+
+@app.route("/api/webhook/lead", methods=["POST"])
+def webhook_lead():
+    token = request.headers.get("X-Webhook-Token") or request.args.get("token", "")
+    if not LEAD_WEBHOOK_TOKEN or token != LEAD_WEBHOOK_TOKEN:
+        return jsonify({"error": "unauthorized"}), 401
+
+    body = request.get_json(force=True, silent=True) or {}
+    name = (body.get("name") or "").strip()
+    phone = (body.get("phone") or "").strip()
+    source = (body.get("source") or "").strip() or "webhook"
+    notes = (body.get("notes") or "").strip()
+
+    lead = db.create_lead({
+        "name": name,
+        "phone": phone,
+        "stage": "cold",
+        "leadSource": source,
+        "notes": notes,
+    })
+    notify_admin(f"🆕 Новий лід ({source}): {name or phone or '(без імені)'}")
+    return jsonify(lead), 201
 
 
 # ---- background workers ----

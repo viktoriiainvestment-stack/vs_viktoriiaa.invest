@@ -69,8 +69,41 @@ python app.py               # http://localhost:5000
    from viber_bot import register_webhook
    register_webhook("https://ваш-домен/viber/webhook")
    ```
-7. **Facebook/Instagram Lead Ads** — найбільше ручної роботи в Meta,
-   робиться раз:
+7. **Instagram-реклама і квіз-бот — простіший шлях через Zapier/Make**
+   (рекомендовано, якщо не хочете возитись з Meta App Review):
+
+   Замість прямої інтеграції з Graph API є універсальний ендпоінт
+   `POST /api/webhook/lead` — приймає JSON
+   `{"name": "...", "phone": "...", "source": "instagram-ads" | "quiz" | ...}`
+   з заголовком `X-Webhook-Token: <LEAD_WEBHOOK_TOKEN>` (або
+   `?token=<LEAD_WEBHOOK_TOKEN>` у URL) і одразу створює лід зі стадією
+   «Холодна база».
+
+   1. Придумайте будь-який довгий рядок → `LEAD_WEBHOOK_TOKEN`.
+   2. У [Zapier](https://zapier.com) (безкоштовного плану зазвичай
+      достатньо) створіть Zap:
+      - **Trigger**: вбудована інтеграція «Facebook Lead Ads» (New Lead)
+        — авторизуєтесь через Facebook, обираєте сторінку й форму. Не
+        потрібен ні App Secret, ні Page Access Token, ні App Review —
+        Zapier бере це на себе.
+      - **Action**: «Webhooks by Zapier» → POST →
+        `https://ваш-домен/api/webhook/lead`, заголовок
+        `X-Webhook-Token: <ваш LEAD_WEBHOOK_TOKEN>`, тіло — поля
+        `name`/`phone` з форми, `source: "instagram-ads"`.
+   3. Для квіз-бота — якщо він на ManyChat/BotHelp/SalesBot чи іншій
+      платформі, майже завжди є або пряма інтеграція з Zapier, або
+      власний вебхук/HTTP-запит у налаштуваннях сценарію в кінці квізу.
+      В обох випадках кінцевий крок той самий: POST на
+      `/api/webhook/lead` з `source: "quiz"`.
+
+   Якщо пізніше захочете офіційну пряму інтеграцію (без Zapier
+   посередині) — код для цього теж є (`meta_leads.py`, вебхук
+   `/meta/webhook`), і повний покроковий шлях через Meta for Developers
+   з App Review нижче.
+
+   <details>
+   <summary>Пряма інтеграція з Meta Graph API (без Zapier)</summary>
+
    1. [developers.facebook.com](https://developers.facebook.com) →
       «Мої застосунки» → «Створити застосунок» → тип «Business».
    2. У застосунку скопіюйте **App Secret** (Налаштування → Основні) →
@@ -93,11 +126,14 @@ python app.py               # http://localhost:5000
       дозвіл `leads_retrieval`, якщо реклама не тестова — без цього
       вебхук працюватиме лише для сторінок, де ви адмін і застосунок у
       Development-режимі.
+   </details>
 
-Ліди з Facebook/Instagram позначені бейджем «Facebook Ads»; прямого
-каналу для відповіді з дашборду в них немає (Meta не дає messenger-id
-через Lead Ads) — телефон і email лежать у картці ліда, дзвоните або
-пишете вручну.
+Ліди з Facebook/Instagram позначені бейджем «Facebook Ads» лише коли
+йдуть через пряму інтеграцію (`channel: facebook`); через Zapier-шлях
+вище лід просто отримує `leadSource`, яке ви вказали. Прямого каналу
+для відповіді з дашборду в таких лідів немає (Meta/Zapier не дають
+messenger-id через Lead Ads) — телефон лежить у картці ліда, дзвоните
+або пишете вручну (або в Instagram Direct, якщо клієнт писав звідти).
 
 Telegram-бот працює через polling — вебхук не потрібен, спрацює одразу
 після деплою.
