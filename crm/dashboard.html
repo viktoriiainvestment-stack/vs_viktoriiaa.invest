@@ -543,7 +543,7 @@
   // живуть окремо, у вкладці «Угоди».
   const BOARD_STAGES = ALL_STAGES.slice(0, 3);
   const DEAL_STAGE_KEYS = ['investor', 'client'];
-  const CHANNEL_LABEL = {telegram:'Telegram'};
+  const CHANNEL_LABEL = {telegram:'Telegram', quiz_bot:'Telegram (квіз)'};
   // «Не актуально» — поза лійкою: не бере участі у степері/drag&drop,
   // ставиться тільки вручну через картку ліда.
   const INACTIVE_STAGE = {key:'inactive', label:'Не актуально', color:'var(--ink-faint)'};
@@ -1027,7 +1027,7 @@
     const lead = leads.find(l=>l.id===editingId);
     const intl = intlPhone(lead?.phone);
     const text = document.getElementById('sendText').value.trim();
-    const botChannel = lead && lead.externalId && (lead.channel === 'telegram');
+    const botChannel = lead && lead.externalId && (['telegram','quiz_bot'].includes(lead.channel));
     if((!intl && !botChannel) || !text){
       link.classList.add('disabled');
       hint.textContent = (intl || botChannel)
@@ -1045,7 +1045,7 @@
     const lead = leads.find(l=>l.id===editingId);
     const text = document.getElementById('sendText').value.trim();
     if(!lead || !text) return;
-    const botChannel = lead.externalId && (lead.channel === 'telegram');
+    const botChannel = lead.externalId && (['telegram','quiz_bot'].includes(lead.channel));
     if(botChannel){
       try{
         await apiFetch(`/api/leads/${editingId}/send`, {method:'POST', body: JSON.stringify({text})});

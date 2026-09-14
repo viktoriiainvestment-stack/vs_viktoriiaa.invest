@@ -79,6 +79,12 @@ def api_delete_lead(lead_id):
     return "", 204
 
 
+# Кожен канал — окремий бот (окремий токен), тому надсилати можна
+# тільки через ТОГО бота, якому лід сам колись написав — Telegram не
+# дає іншому боту "втрутитись" у чужий діалог.
+_BOT_SENDERS = {"telegram": telegram_bot.send_message, "quiz_bot": quiz_bot.send_message}
+
+
 @app.route("/api/leads/<int:lead_id>/send", methods=["POST"])
 @require_admin
 def api_send_to_lead(lead_id):
@@ -88,10 +94,11 @@ def api_send_to_lead(lead_id):
     text = (request.get_json(force=True) or {}).get("text", "").strip()
     if not text:
         return jsonify({"error": "text is required"}), 400
-    if not lead.get("externalId") or lead["channel"] != "telegram":
-        return jsonify({"error": "У цього ліда немає Telegram-каналу для надсилання"}), 400
+    sender = _BOT_SENDERS.get(lead["channel"])
+    if not lead.get("externalId") or not sender:
+        return jsonify({"error": "У цього ліда немає бот-каналу для надсилання"}), 400
 
-    telegram_bot.send_message(lead["externalId"], text)
+    sender(lead["externalId"], text)
 
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     notes = (lead.get("notes") or "") + f"\n[{stamp}] Надіслано: {text}"
@@ -185,10 +192,11 @@ def _digest_loop():
 
 def _autosend_loop():
     """Follow-up-скрипти, заплановані на конкретну дату (autoSendText),
-    надсилаються самі через CRM-бот, коли настає nextActionAt (і
-    nextActionTime, якщо вказано) — без кліку адміна. Працює тільки для
-    лідів з channel == "telegram" і заповненим externalId (тобто які
-    самі писали в CRM-бот): іншим каналом бот не вміє ініціювати діалог.
+    надсилаються самі через відповідного бота (_BOT_SENDERS), коли
+    настає nextActionAt (і nextActionTime, якщо вказано) — без кліку
+    адміна. Працює тільки для лідів з channel у _BOT_SENDERS і
+    заповненим externalId (тобто хто сам писав тому боту): іншим
+    каналом жоден бот не вміє ініціювати діалог першим.
     """
     while True:
         now = datetime.now()
@@ -202,9 +210,10 @@ def _autosend_loop():
                 continue
             if lead["nextActionAt"] == today and lead.get("nextActionTime") and lead["nextActionTime"] > current_time:
                 continue
-            if lead.get("channel") != "telegram" or not lead.get("externalId"):
+            sender = _BOT_SENDERS.get(lead.get("channel"))
+            if not sender or not lead.get("externalId"):
                 continue  # немає каналу для автонадсилання — лишається звичайним завданням
-            telegram_bot.send_message(lead["externalId"], text)
+            sender(lead["externalId"], text)
             stamp = now.strftime("%Y-%m-%d %H:%M")
             notes = (lead.get("notes") or "") + f"\n[{stamp}] Автонадіслано (follow-up): {text}"
             db.update_lead(lead["id"], {

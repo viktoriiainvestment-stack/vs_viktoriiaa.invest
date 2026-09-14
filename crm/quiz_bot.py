@@ -85,6 +85,14 @@ def _send_question(chat_id, question):
     bot.send_message(chat_id, question["text"], reply_markup=_keyboard_for(question))
 
 
+def send_message(chat_id, text):
+    """Для ручного «Надіслати» й автонадсилання (channel == "quiz_bot") —
+    дзвонить сюди, бо лід писав саме цьому боту, і тільки цей бот
+    (з тим самим QUIZ_BOT_TOKEN) має з ним «відкритий діалог»."""
+    if bot:
+        bot.send_message(chat_id, text)
+
+
 PLACEHOLDER_IMAGE = CRM_DIR / "assets" / "placeholder.jpg"
 
 
@@ -167,6 +175,8 @@ def _finalize_lead(chat_id, session, call_time_label, fallback_name=""):
         "phone": session.get("phone", ""),
         "stage": "cold",
         "leadSource": "quiz",
+        "channel": "quiz_bot",
+        "externalId": str(chat_id),
         "notes": notes,
         "nextAction": next_action,
         "nextActionAt": next_action_at,
