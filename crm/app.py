@@ -19,6 +19,11 @@ DIGEST_HOUR = int(os.environ.get("DIGEST_HOUR", "9"))
 ENABLE_DAILY_DIGEST = os.environ.get("ENABLE_DAILY_DIGEST", "false").lower() == "true"
 
 app = Flask(__name__)
+print(
+    f"crm.db шлях: {db.DB_PATH} "
+    f"(DATA_DIR={'задано, ' + os.environ['DATA_DIR'] if os.environ.get('DATA_DIR') else 'НЕ задано — тимчасовий диск, дані губляться при кожному деплої!'})",
+    flush=True,
+)
 db.init_db()
 seed.run()  # no-op якщо в базі вже є хоч один лід
 

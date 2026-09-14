@@ -1,8 +1,17 @@
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "crm.db"
+# DATA_DIR — де фізично лежить crm.db. За замовчуванням поруч із кодом
+# (crm/), що на Railway БЕЗ підключеного Volume живе на тимчасовому
+# диску: файл стирається й перестворюється заново при кожному деплої
+# чи перезапуску сервера — будь-які ліди, створені між ними, губляться
+# назавжди. Підключіть Railway Volume (Settings -> Volumes), змонтуйте
+# його, наприклад, на /data, і задайте змінну середовища DATA_DIR=/data
+# — тоді crm.db переживе будь-який наступний деплой.
+DATA_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).parent)))
+DB_PATH = DATA_DIR / "crm.db"
 
 STAGES = ["cold", "qualification", "qualified", "investor", "client", "inactive"]
 
