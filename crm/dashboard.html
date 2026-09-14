@@ -800,7 +800,7 @@
   function renderBoard(){
     const filtered = visibleLeads().filter(matchesQuery);
     boardEl.innerHTML = BOARD_STAGES.map(stage => {
-      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=>(a.order||0)-(b.order||0));
+      const items = filtered.filter(l => l.stage === stage.key).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
       return `
         <div class="column" data-stage="${stage.key}">
           <div class="column-head">
