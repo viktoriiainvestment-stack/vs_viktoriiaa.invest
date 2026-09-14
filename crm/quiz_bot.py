@@ -13,6 +13,7 @@ import os
 import time
 import traceback
 from datetime import date, timedelta
+from pathlib import Path
 
 import telebot
 from telebot import types
@@ -23,6 +24,8 @@ from notifications import notify_admin
 
 TOKEN = os.environ.get("QUIZ_BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN) if TOKEN else None
+
+CRM_DIR = Path(__file__).parent
 
 # Стан кожного чату тримаємо в пам'яті процесу — це нормально для
 # короткого лінійного квізу (кілька хвилин), не потребує окремої
@@ -73,6 +76,17 @@ def _send_question(chat_id, question):
     bot.send_message(chat_id, question["text"], reply_markup=_keyboard_for(question))
 
 
+def _send_card(chat_id, card):
+    """Надсилає картку проєкту — фото з підписом, якщо card["image"]
+    задано і файл є на диску, інакше просто текст."""
+    image_path = card.get("image") and CRM_DIR / card["image"]
+    if image_path and image_path.is_file():
+        with open(image_path, "rb") as photo:
+            bot.send_photo(chat_id, photo, caption=card["text"])
+    else:
+        bot.send_message(chat_id, card["text"])
+
+
 def _send_cards_and_ask_phone(chat_id, session):
     answers = session["answers"]
     if answers.get("region") == "abroad":
@@ -81,7 +95,7 @@ def _send_cards_and_ask_phone(chat_id, session):
         matched = [c for c in qd.UKRAINE_CARDS if qd.card_matches(c, answers)]
         if matched:
             for card in matched:
-                bot.send_message(chat_id, card["text"])
+                _send_card(chat_id, card)
         elif answers.get("construction") == "ready":
             bot.send_message(chat_id, qd.READY_FALLBACK_TEXT)
         else:
