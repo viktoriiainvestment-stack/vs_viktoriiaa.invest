@@ -233,6 +233,16 @@ if bot:
         chat_id = message.chat.id
         session = _sessions.get(chat_id)
         if not session or session.get("step") != "awaiting_phone":
+            # Сесія живе тільки в пам'яті процесу — при кожному деплої
+            # (перезапуску бота) вона губиться. Без цього повідомлення
+            # людина тисне "Поділитись контактом" у порожнечу й не
+            # розуміє, чому бот "мовчить" (саме так і сталось 2026-09-14).
+            bot.send_message(
+                chat_id,
+                "Сесію квізу загублено (можливо, бот саме оновлювався) — "
+                "почніть, будь ласка, заново: /start",
+                reply_markup=types.ReplyKeyboardRemove(),
+            )
             return
         session["phone"] = message.contact.phone_number
         session["name"] = f"{message.contact.first_name or ''} {message.contact.last_name or ''}".strip()
@@ -243,8 +253,14 @@ if bot:
     def handle_text(message):
         chat_id = message.chat.id
         session = _sessions.get(chat_id)
-        if not session or session.get("step") != "awaiting_time":
-            return  # поза сценарієм квізу — ігноруємо (чи можна тут /start підказати)
+        if not session:
+            bot.send_message(chat_id, "Щоб підібрати проєкт, напишіть /start")
+            return
+        if session.get("step") == "awaiting_phone":
+            bot.send_message(chat_id, "Натисніть, будь ласка, кнопку «📱 Поділитись контактом» нижче 👇")
+            return
+        if session.get("step") != "awaiting_time":
+            return  # мід-квізу очікуємо натискання кнопки під питанням, а не текст — ігноруємо мовчки
 
         answers = session["answers"]
         notes = "Пройшов квіз «Підібрати проект»:\n" + _answers_summary(answers)
