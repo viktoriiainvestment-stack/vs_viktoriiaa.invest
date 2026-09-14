@@ -311,7 +311,8 @@
   }
   .section-label:first-child{border-top:none; padding-top:0; margin-top:0;}
 
-  .tasks-list{display:flex; flex-direction:column; gap:8px;}
+  .tasks-list{display:flex; flex-direction:column; gap:8px; margin-bottom:24px;}
+  .tasks-section-title{font-size:14px; font-weight:700; margin:0 0 10px; color:var(--ink-soft);}
   .task-list-row{
     display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--line);
     border-radius:14px; padding:12px 14px; cursor:pointer; box-shadow:var(--shadow); flex-wrap:wrap;
@@ -389,7 +390,10 @@
       <label for="taskMonthFilter">Місяць:</label>
       <select id="taskMonthFilter"><option value="">Усі місяці</option></select>
     </div>
+    <h3 class="tasks-section-title">📋 Мої завдання — зателефонувати/написати самій</h3>
     <div class="tasks-list" id="tasksList"></div>
+    <h3 class="tasks-section-title">📣 Розсилка — налаштувати й надіслати «Не актуально» лідам</h3>
+    <div class="tasks-list" id="broadcastList"></div>
   </div>
 
   <div id="dealsView" hidden>
@@ -548,6 +552,7 @@
   const dealsView = document.getElementById('dealsView');
   const inactiveView = document.getElementById('inactiveView');
   const tasksListEl = document.getElementById('tasksList');
+  const broadcastListEl = document.getElementById('broadcastList');
   const dealsListEl = document.getElementById('dealsList');
   const inactiveListEl = document.getElementById('inactiveList');
   const taskMonthFilterEl = document.getElementById('taskMonthFilter');
@@ -811,6 +816,17 @@
     wireDragAndDrop();
   }
 
+  function taskRowHtml(l, today){
+    return `
+      <div class="task-list-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
+        <span class="badge" style="background:var(--accent-soft); color:var(--accent);">${esc(stageLabel(l.stage))}</span>
+        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
+        <span class="twhat">${esc(l.nextAction || '')}</span>
+        <span class="twhen">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
+      </div>
+    `;
+  }
+
   function renderTasksView(){
     const withTasks = visibleLeads().filter(l => l.nextActionAt && matchesQuery(l));
     populateMonthFilter(
@@ -820,17 +836,17 @@
     );
     const taskMonth = taskMonthFilterEl.value;
     const today = todayStr();
-    const rows = withTasks
+    const filtered = withTasks
       .filter(l => !taskMonth || l.nextActionAt.slice(0,7) === taskMonth)
       .sort((a,b)=> (a.nextActionAt+ (a.nextActionTime||'')).localeCompare(b.nextActionAt + (b.nextActionTime||'')));
-    tasksListEl.innerHTML = rows.length ? rows.map(l => `
-      <div class="task-list-row ${l.nextActionAt < today ? 'overdue' : ''}" data-id="${esc(l.id)}">
-        <span class="badge" style="background:var(--accent-soft); color:var(--accent);">${esc(stageLabel(l.stage))}</span>
-        <span class="twho">${esc(l.name || l.phone || '(без імені)')}</span>
-        <span class="twhat">${esc(l.nextAction || '')}</span>
-        <span class="twhen">${esc(l.nextActionAt)}${l.nextActionTime ? ' · ' + esc(l.nextActionTime) : ''}</span>
-      </div>
-    `).join('') : '<div class="empty-state">Немає завдань за цей період</div>';
+    // «Не актуально» — це нагадування розсилки через 6 міс (reengageLater),
+    // а не завдання зателефонувати конкретному ліду з воронки — тримаємо окремо.
+    const myTasks = filtered.filter(l => l.stage !== 'inactive');
+    const broadcastTasks = filtered.filter(l => l.stage === 'inactive');
+    tasksListEl.innerHTML = myTasks.length ? myTasks.map(l => taskRowHtml(l, today)).join('')
+      : '<div class="empty-state">Немає завдань за цей період</div>';
+    broadcastListEl.innerHTML = broadcastTasks.length ? broadcastTasks.map(l => taskRowHtml(l, today)).join('')
+      : '<div class="empty-state">Немає розсилок за цей період</div>';
   }
 
   function renderDealsView(){
@@ -1265,6 +1281,10 @@
     renderStats(); renderFunnel(); renderTasks(); renderBoard(); renderTasksView(); renderInactiveView(); renderDealsView();
   });
   tasksListEl.addEventListener('click', (e)=>{
+    const row = e.target.closest('.task-list-row');
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
+  });
+  broadcastListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
     if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
   });
