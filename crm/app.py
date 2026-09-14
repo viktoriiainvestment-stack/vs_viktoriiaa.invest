@@ -183,6 +183,41 @@ def _digest_loop():
         time.sleep(60)
 
 
+def _autosend_loop():
+    """Follow-up-скрипти, заплановані на конкретну дату (autoSendText),
+    надсилаються самі через CRM-бот, коли настає nextActionAt (і
+    nextActionTime, якщо вказано) — без кліку адміна. Працює тільки для
+    лідів з channel == "telegram" і заповненим externalId (тобто які
+    самі писали в CRM-бот): іншим каналом бот не вміє ініціювати діалог.
+    """
+    while True:
+        now = datetime.now()
+        today = now.strftime("%Y-%m-%d")
+        current_time = now.strftime("%H:%M")
+        for lead in db.list_leads():
+            text = (lead.get("autoSendText") or "").strip()
+            if not text or not lead.get("nextActionAt"):
+                continue
+            if lead["nextActionAt"] > today:
+                continue
+            if lead["nextActionAt"] == today and lead.get("nextActionTime") and lead["nextActionTime"] > current_time:
+                continue
+            if lead.get("channel") != "telegram" or not lead.get("externalId"):
+                continue  # немає каналу для автонадсилання — лишається звичайним завданням
+            telegram_bot.send_message(lead["externalId"], text)
+            stamp = now.strftime("%Y-%m-%d %H:%M")
+            notes = (lead.get("notes") or "") + f"\n[{stamp}] Автонадіслано (follow-up): {text}"
+            db.update_lead(lead["id"], {
+                "notes": notes.strip(),
+                "autoSendText": "",
+                "nextAction": "",
+                "nextActionAt": "",
+                "nextActionTime": "",
+            })
+            notify_admin(f"🤖 Автонадіслано follow-up: {lead.get('name') or lead.get('phone')}")
+        time.sleep(60)
+
+
 def _start_background_workers():
     # Якщо в TELEGRAM_CRM_BOT_TOKEN і QUIZ_BOT_TOKEN стоїть один і той
     # самий токен (один бот на все: і квіз, і сповіщення) — не
@@ -204,6 +239,7 @@ def _start_background_workers():
         threading.Thread(target=quiz_bot.start_polling, daemon=True).start()
     if ENABLE_DAILY_DIGEST:
         threading.Thread(target=_digest_loop, daemon=True).start()
+    threading.Thread(target=_autosend_loop, daemon=True).start()
 
 
 _start_background_workers()

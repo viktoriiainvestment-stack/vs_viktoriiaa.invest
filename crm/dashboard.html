@@ -462,6 +462,11 @@
       <div class="field"><label for="f-next-date">Дата</label><input id="f-next-date" type="date"></div>
       <div class="field"><label for="f-next-time">Час</label><input id="f-next-time" type="time"></div>
     </div>
+    <div class="field">
+      <label for="f-autosend-script">🤖 Автонадсилання скрипту в цю дату (необов'язково)</label>
+      <select id="f-autosend-script"><option value="">— не надсилати автоматично —</option></select>
+      <span class="muted" id="autoSendHint" style="font-size:12px;"></span>
+    </div>
     <div class="quick-actions">
       <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
       <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть завдання, дату і час, збережіть лід — з'явиться кнопка</span>
@@ -966,15 +971,32 @@
     renderDealsView();
   }
 
+  function scriptsFor(stage){
+    if(!stage) return scripts;
+    const matched = scripts.filter(s => !s.stage || s.stage === stage);
+    return matched.length ? matched : scripts;
+  }
+
   function fillScriptSelect(stage){
     const sel = document.getElementById('sendScriptSelect');
-    let list = scripts;
-    if(stage){
-      const matched = scripts.filter(s => !s.stage || s.stage === stage);
-      if(matched.length) list = matched;
-    }
     sel.innerHTML = '<option value="">— обрати скрипт —</option>' +
-      list.map(s => `<option value="${esc(s.id)}">${s.stage ? '⭐ ' : ''}${esc(s.title)}</option>`).join('');
+      scriptsFor(stage).map(s => `<option value="${esc(s.id)}">${s.stage ? '⭐ ' : ''}${esc(s.title)}</option>`).join('');
+  }
+
+  function fillAutoSendSelect(stage, lead){
+    const sel = document.getElementById('f-autosend-script');
+    sel.innerHTML = '<option value="">— не надсилати автоматично —</option>' +
+      scriptsFor(stage).map(s => `<option value="${esc(s.id)}">${s.stage ? '⭐ ' : ''}${esc(s.title)}</option>`).join('');
+    const hint = document.getElementById('autoSendHint');
+    if(lead?.autoSendText){
+      const match = scripts.find(s => s.text === lead.autoSendText);
+      sel.value = match ? String(match.id) : '';
+      const preview = lead.autoSendText.length > 60 ? lead.autoSendText.slice(0,60)+'…' : lead.autoSendText;
+      hint.textContent = `Заплановано на ${lead.nextActionAt || 'дату вище'}: «${preview}»`;
+    } else {
+      sel.value = '';
+      hint.textContent = '';
+    }
   }
 
   function renderQuickActions(lead){
@@ -1104,6 +1126,7 @@
     document.getElementById('sendScriptSelect').value = '';
     document.getElementById('sendText').value = '';
     fillScriptSelect(lead?.stage);
+    fillAutoSendSelect(lead?.stage, lead);
     renderQuickActions(lead);
     updateGcalLink();
     updateSendTelegramLink();
@@ -1134,6 +1157,10 @@
       nextAction: document.getElementById('f-next').value.trim(),
       nextActionAt: document.getElementById('f-next-date').value,
       nextActionTime: document.getElementById('f-next-time').value,
+      autoSendText: (() => {
+        const s = scripts.find(s => String(s.id) === document.getElementById('f-autosend-script').value);
+        return s ? s.text : '';
+      })(),
       notes: document.getElementById('f-notes').value.trim(),
     };
   }
@@ -1269,6 +1296,16 @@
   document.getElementById('f-next').addEventListener('input', updateGcalLink);
   document.getElementById('f-next-date').addEventListener('input', updateGcalLink);
   document.getElementById('f-next-time').addEventListener('input', updateGcalLink);
+  document.getElementById('f-autosend-script').addEventListener('change', () => {
+    const sel = document.getElementById('f-autosend-script');
+    const hint = document.getElementById('autoSendHint');
+    const s = scripts.find(s => String(s.id) === sel.value);
+    if(!s){ hint.textContent = ''; return; }
+    const preview = s.text.length > 60 ? s.text.slice(0,60)+'…' : s.text;
+    hint.textContent = document.getElementById('f-next-date').value
+      ? `Буде надіслано: «${preview}» — збережіть лід`
+      : `⚠️ Вкажіть дату вище, інакше не надішлеться. Буде надіслано: «${preview}»`;
+  });
   document.getElementById('f-next-preset').addEventListener('change', () => {
     const presetEl = document.getElementById('f-next-preset');
     const nextEl = document.getElementById('f-next');
