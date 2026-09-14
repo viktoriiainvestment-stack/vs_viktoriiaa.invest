@@ -68,6 +68,16 @@ Q_TIMING = {
     ],
 }
 
+# Через скільки днів crm/quiz_bot.py має нагадати зателефонувати цьому
+# ліду ("nextActionAt" у дашборді) — залежно від Q_TIMING. None —
+# без автоматичного нагадування (лід і так видно в "Нові ліди").
+TIMING_FOLLOWUP_DAYS = {
+    "soon": 0,
+    "waiting_exit": 90,
+    "end_of_year": None,  # рахується окремо, до кінця поточного року
+    "analyzing": None,
+}
+
 # Питання йдуть у цьому порядку (Q_COUNTRY вставляється логікою бота
 # тільки якщо на Q_REGION обрали "abroad" — тут його не дублюємо).
 QUESTIONS = [Q_REGION, Q_CONSTRUCTION, Q_FORMAT, Q_TIMING]

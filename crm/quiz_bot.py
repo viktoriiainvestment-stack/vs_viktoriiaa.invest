@@ -12,6 +12,7 @@ CRM (db.create_lead) — без SendPulse, без вебхука, без опл�
 import os
 import time
 import traceback
+from datetime import date, timedelta
 
 import telebot
 from telebot import types
@@ -87,6 +88,27 @@ def _send_cards_and_ask_phone(chat_id, session):
             bot.send_message(chat_id, qd.NO_MATCH_FALLBACK_TEXT)
     session["step"] = "awaiting_phone"
     bot.send_message(chat_id, qd.ASK_PHONE_TEXT, reply_markup=_contact_keyboard())
+
+
+def _next_action_for(timing):
+    """(nextActionAt, nextAction) для дашборду CRM за відповіддю на Q_TIMING.
+
+    "Найближчим часом" -> нагадування на сьогодні (одразу у "Задачах"),
+    "waiting_exit" -> через ~90 днів, "end_of_year" -> ближче до кінця
+    поточного року. "analyzing" і невідомі відповіді — без нагадування,
+    ("", "") — лід і так видно в "Нових лідах".
+    """
+    days = qd.TIMING_FOLLOWUP_DAYS.get(timing)
+    label = next((lbl for lbl, val in qd.Q_TIMING["options"] if val == timing), timing)
+    if timing == "end_of_year":
+        today = date.today()
+        target = date(today.year, 12, 20)
+        if target < today:
+            target = date(today.year + 1, 12, 20)
+        return target.isoformat(), f"Зателефонувати — квіз: {label}"
+    if days is None:
+        return "", ""
+    return (date.today() + timedelta(days=days)).isoformat(), f"Зателефонувати — квіз: {label}"
 
 
 def _answers_summary(answers):
@@ -166,6 +188,7 @@ if bot:
         answers = session["answers"]
         notes = "Пройшов квіз «Підібрати проект»:\n" + _answers_summary(answers)
         notes += f"\nЗручний час дзвінка: {message.text}"
+        next_action_at, next_action = _next_action_for(answers.get("timing"))
 
         lead = create_lead({
             "name": session.get("name") or message.from_user.full_name or "",
@@ -173,6 +196,8 @@ if bot:
             "stage": "cold",
             "leadSource": "quiz",
             "notes": notes,
+            "nextAction": next_action,
+            "nextActionAt": next_action_at,
         })
         notify_admin(f"🆕 Новий лід (квіз): {lead['name'] or lead['phone']}")
         bot.send_message(chat_id, qd.THANK_YOU_TEXT)
