@@ -111,7 +111,9 @@ def api_list_scripts():
 @require_admin
 def api_create_script():
     body = request.get_json(force=True) or {}
-    script = db.create_script(body.get("title", "").strip(), body.get("text", "").strip())
+    script = db.create_script(
+        body.get("title", "").strip(), body.get("text", "").strip(), body.get("stage", "").strip()
+    )
     return jsonify(script), 201
 
 
@@ -119,7 +121,9 @@ def api_create_script():
 @require_admin
 def api_update_script(script_id):
     body = request.get_json(force=True) or {}
-    script = db.update_script(script_id, body.get("title", "").strip(), body.get("text", "").strip())
+    script = db.update_script(
+        script_id, body.get("title", "").strip(), body.get("text", "").strip(), body.get("stage", "").strip()
+    )
     if not script:
         return jsonify({"error": "not found"}), 404
     return jsonify(script)

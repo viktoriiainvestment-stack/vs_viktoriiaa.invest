@@ -58,11 +58,18 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             text TEXT NOT NULL DEFAULT '',
+            stage TEXT NOT NULL DEFAULT '',
             createdAt TEXT NOT NULL,
             updatedAt TEXT NOT NULL
         )
         """
     )
+    # Міграція для баз, створених до додавання "stage" (ALTER TABLE, бо
+    # CREATE TABLE IF NOT EXISTS не чіпає вже існуючу таблицю).
+    try:
+        conn.execute("ALTER TABLE scripts ADD COLUMN stage TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass  # колонка вже є
     conn.commit()
     conn.close()
 
@@ -157,24 +164,24 @@ def list_scripts():
     return [dict(r) for r in rows]
 
 
-def create_script(title, text):
+def create_script(title, text, stage=""):
     conn = get_conn()
     now = _now()
     cur = conn.execute(
-        "INSERT INTO scripts (title, text, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
-        (title, text, now, now),
+        "INSERT INTO scripts (title, text, stage, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+        (title, text, stage, now, now),
     )
     conn.commit()
     script_id = cur.lastrowid
     conn.close()
-    return {"id": script_id, "title": title, "text": text, "createdAt": now, "updatedAt": now}
+    return {"id": script_id, "title": title, "text": text, "stage": stage, "createdAt": now, "updatedAt": now}
 
 
-def update_script(script_id, title, text):
+def update_script(script_id, title, text, stage=""):
     conn = get_conn()
     conn.execute(
-        "UPDATE scripts SET title = ?, text = ?, updatedAt = ? WHERE id = ?",
-        (title, text, _now(), script_id),
+        "UPDATE scripts SET title = ?, text = ?, stage = ?, updatedAt = ? WHERE id = ?",
+        (title, text, stage, _now(), script_id),
     )
     conn.commit()
     row = conn.execute("SELECT * FROM scripts WHERE id = ?", (script_id,)).fetchone()

@@ -514,6 +514,7 @@
   </div>
   <div class="drawer-body">
     <div class="field"><label for="ns-title">Назва</label><input id="ns-title" type="text" placeholder="Наприклад: Заперечення «дорого»"></div>
+    <div class="field"><label for="ns-stage">Стадія воронки</label><select id="ns-stage"><option value="">— Будь-яка стадія —</option></select></div>
     <div class="field"><label for="ns-text">Текст</label><textarea id="ns-text" rows="4" placeholder="Готовий текст повідомлення…"></textarea></div>
     <button class="btn primary small" id="addScriptBtn" style="align-self:flex-start;">Додати скрипт</button>
     <div id="scriptsList" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;"></div>
@@ -544,6 +545,11 @@
   const REENGAGE_MONTHS = 6;
   const stageIndex = k => ALL_STAGES.findIndex(s=>s.key===k);
   const stageLabel = k => ALL_STAGES.find(s=>s.key===k)?.label || (k===INACTIVE_STAGE.key ? INACTIVE_STAGE.label : k);
+  const scriptStageLabel = k => k ? stageLabel(k) : 'Будь-яка стадія';
+
+  document.getElementById('ns-stage').innerHTML =
+    '<option value="">— Будь-яка стадія —</option>' +
+    [...ALL_STAGES, INACTIVE_STAGE].map(s => `<option value="${s.key}">${esc(s.label)}</option>`).join('');
 
   const boardEl = document.getElementById('board');
   const statsEl = document.getElementById('stats');
@@ -960,10 +966,15 @@
     renderDealsView();
   }
 
-  function fillScriptSelect(){
+  function fillScriptSelect(stage){
     const sel = document.getElementById('sendScriptSelect');
+    let list = scripts;
+    if(stage){
+      const matched = scripts.filter(s => !s.stage || s.stage === stage);
+      if(matched.length) list = matched;
+    }
     sel.innerHTML = '<option value="">— обрати скрипт —</option>' +
-      scripts.map(s => `<option value="${esc(s.id)}">${esc(s.title)}</option>`).join('');
+      list.map(s => `<option value="${esc(s.id)}">${s.stage ? '⭐ ' : ''}${esc(s.title)}</option>`).join('');
   }
 
   function renderQuickActions(lead){
@@ -1092,6 +1103,7 @@
     document.getElementById('sendBox').hidden = !lead;
     document.getElementById('sendScriptSelect').value = '';
     document.getElementById('sendText').value = '';
+    fillScriptSelect(lead?.stage);
     renderQuickActions(lead);
     updateGcalLink();
     updateSendTelegramLink();
@@ -1260,8 +1272,17 @@
   document.getElementById('f-next-preset').addEventListener('change', () => {
     const presetEl = document.getElementById('f-next-preset');
     const nextEl = document.getElementById('f-next');
+    const dateEl = document.getElementById('f-next-date');
     if(presetEl.value === 'custom'){ nextEl.focus(); return; }
-    if(presetEl.value){ nextEl.value = presetEl.value; updateGcalLink(); }
+    if(!presetEl.value) return;
+    nextEl.value = presetEl.value;
+    // Follow-up — типово нагадування через 1 день, якщо дату ще не задано вручну.
+    if(presetEl.value === 'Написати в месенджер' && !dateEl.value){
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      dateEl.value = d.toISOString().slice(0, 10);
+    }
+    updateGcalLink();
   });
   document.getElementById('f-phone').addEventListener('input', checkDuplicate);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
@@ -1319,10 +1340,16 @@
   });
 
   // ---- scripts panel ----
+  let editingScriptId = null;
+
+  function currentLeadStage(){
+    return editingId ? leads.find(l=>l.id===editingId)?.stage : null;
+  }
+
   function renderScriptsList(){
     document.getElementById('scriptsList').innerHTML = scripts.map(s => `
       <div class="script-item" data-id="${esc(s.id)}">
-        <div class="title">${esc(s.title)}</div>
+        <div class="title">${esc(s.title)} <span class="badge outline" style="font-size:10.5px;">${esc(scriptStageLabel(s.stage))}</span></div>
         <div class="text">${esc(s.text)}</div>
         <div class="row">
           <button class="btn small" data-copy="${esc(s.id)}">Копіювати</button>
@@ -1331,10 +1358,19 @@
         </div>
       </div>
     `).join('') || '<div class="column-empty">Ще немає скриптів — додайте перший вище</div>';
-    fillScriptSelect();
+    fillScriptSelect(currentLeadStage());
+  }
+
+  function resetScriptForm(){
+    editingScriptId = null;
+    document.getElementById('ns-title').value = '';
+    document.getElementById('ns-text').value = '';
+    document.getElementById('ns-stage').value = '';
+    document.getElementById('addScriptBtn').textContent = 'Додати скрипт';
   }
 
   document.getElementById('scriptsBtn').addEventListener('click', ()=>{
+    resetScriptForm();
     scriptsDrawer.hidden = false; scrim.hidden = false;
   });
   document.getElementById('closeScripts').addEventListener('click', ()=>{
@@ -1346,15 +1382,20 @@
   document.getElementById('addScriptBtn').addEventListener('click', async ()=>{
     const title = document.getElementById('ns-title').value.trim();
     const text = document.getElementById('ns-text').value.trim();
+    const stage = document.getElementById('ns-stage').value;
     if(!title || !text) return;
-    document.getElementById('ns-title').value = '';
-    document.getElementById('ns-text').value = '';
+    const id = editingScriptId;
+    resetScriptForm();
     if(!scriptsCol){
-      scripts.push({id:'local-'+Date.now(), title, text});
+      if(id){ const s = scripts.find(s=>String(s.id)===String(id)); if(s){ s.title=title; s.text=text; s.stage=stage; } }
+      else scripts.push({id:'local-'+Date.now(), title, text, stage});
       renderScriptsList();
       return;
     }
-    try{ await scriptsCol.add({title, text, createdAt: Date.now()}); }
+    try{
+      if(id) await scriptsCol.doc(id).update({title, text, stage});
+      else await scriptsCol.add({title, text, stage, createdAt: Date.now()});
+    }
     catch(e){ console.error(e); }
   });
   document.getElementById('scriptsList').addEventListener('click', async (e)=>{
@@ -1374,12 +1415,12 @@
     if(editId){
       const s = scripts.find(s=>String(s.id)===editId);
       if(!s) return;
-      const newTitle = window.prompt('Назва:', s.title);
-      if(newTitle===null) return;
-      const newText = window.prompt('Текст:', s.text);
-      if(newText===null) return;
-      if(!scriptsCol){ s.title=newTitle; s.text=newText; renderScriptsList(); return; }
-      try{ await scriptsCol.doc(editId).update({title:newTitle, text:newText}); }catch(e){ console.error(e); }
+      editingScriptId = s.id;
+      document.getElementById('ns-title').value = s.title;
+      document.getElementById('ns-text').value = s.text;
+      document.getElementById('ns-stage').value = s.stage || '';
+      document.getElementById('addScriptBtn').textContent = 'Зберегти зміни';
+      document.getElementById('ns-title').focus();
     }
   });
 
