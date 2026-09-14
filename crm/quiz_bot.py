@@ -72,6 +72,15 @@ def _contact_keyboard():
     return kb
 
 
+def _call_time_keyboard():
+    """Швидкі кнопки під ASK_TIMING_CALL_TEXT. Клієнт все одно може
+    просто написати свій час текстом — handle_text це теж приймає."""
+    kb = types.InlineKeyboardMarkup()
+    for label, value in qd.CALL_TIME_OPTIONS:
+        kb.add(types.InlineKeyboardButton(label, callback_data=f"calltime:{value}"))
+    return kb
+
+
 def _send_question(chat_id, question):
     bot.send_message(chat_id, question["text"], reply_markup=_keyboard_for(question))
 
@@ -145,6 +154,28 @@ def _next_action_for(timing):
     return (date.today() + timedelta(days=days)).isoformat(), f"Зателефонувати — квіз: {label}"
 
 
+def _finalize_lead(chat_id, session, call_time_label, fallback_name=""):
+    """Записує лід у CRM і завершує квіз — спільна для кнопки швидкого
+    часу (handle_call_time) і вільного тексту (handle_text)."""
+    answers = session["answers"]
+    notes = "Пройшов квіз «Підібрати проект»:\n" + _answers_summary(answers)
+    notes += f"\nЗручний час дзвінка: {call_time_label}"
+    next_action_at, next_action = _next_action_for(answers.get("timing"))
+
+    lead = create_lead({
+        "name": session.get("name") or fallback_name,
+        "phone": session.get("phone", ""),
+        "stage": "cold",
+        "leadSource": "quiz",
+        "notes": notes,
+        "nextAction": next_action,
+        "nextActionAt": next_action_at,
+    })
+    notify_admin(f"🆕 Новий лід (квіз): {lead['name'] or lead['phone']}")
+    bot.send_message(chat_id, qd.THANK_YOU_TEXT)
+    del _sessions[chat_id]
+
+
 def _answers_summary(answers):
     labels = {
         "region": dict(qd.Q_REGION["options"]),
@@ -209,7 +240,7 @@ if bot:
             traceback.print_exc()
             bot.answer_callback_query(call.id, "Не вдалось оновити картку, спробуйте ще раз")
 
-    @bot.callback_query_handler(func=lambda c: not c.data.startswith("cardnav:"))
+    @bot.callback_query_handler(func=lambda c: not c.data.startswith(("cardnav:", "calltime:")))
     def handle_answer(call):
         chat_id = call.message.chat.id
         session = _sessions.get(chat_id)
@@ -247,7 +278,20 @@ if bot:
         session["phone"] = message.contact.phone_number
         session["name"] = f"{message.contact.first_name or ''} {message.contact.last_name or ''}".strip()
         session["step"] = "awaiting_time"
-        bot.send_message(chat_id, qd.ASK_TIMING_CALL_TEXT, reply_markup=types.ReplyKeyboardRemove())
+        bot.send_message(chat_id, qd.ASK_TIMING_CALL_TEXT, reply_markup=_call_time_keyboard())
+
+    @bot.callback_query_handler(func=lambda c: c.data.startswith("calltime:"))
+    def handle_call_time(call):
+        chat_id = call.message.chat.id
+        session = _sessions.get(chat_id)
+        if not session or session.get("step") != "awaiting_time":
+            bot.answer_callback_query(call.id, "Почніть заново командою /start")
+            return
+        value = call.data.split(":", 1)[1]
+        label = next((lbl for lbl, val in qd.CALL_TIME_OPTIONS if val == value), value)
+        bot.answer_callback_query(call.id)
+        bot.send_message(chat_id, f"Обрано: {label}")
+        _finalize_lead(chat_id, session, label, fallback_name=call.from_user.full_name or "")
 
     @bot.message_handler(func=lambda m: True, content_types=["text"])
     def handle_text(message):
@@ -262,23 +306,8 @@ if bot:
         if session.get("step") != "awaiting_time":
             return  # мід-квізу очікуємо натискання кнопки під питанням, а не текст — ігноруємо мовчки
 
-        answers = session["answers"]
-        notes = "Пройшов квіз «Підібрати проект»:\n" + _answers_summary(answers)
-        notes += f"\nЗручний час дзвінка: {message.text}"
-        next_action_at, next_action = _next_action_for(answers.get("timing"))
-
-        lead = create_lead({
-            "name": session.get("name") or message.from_user.full_name or "",
-            "phone": session.get("phone", ""),
-            "stage": "cold",
-            "leadSource": "quiz",
-            "notes": notes,
-            "nextAction": next_action,
-            "nextActionAt": next_action_at,
-        })
-        notify_admin(f"🆕 Новий лід (квіз): {lead['name'] or lead['phone']}")
-        bot.send_message(chat_id, qd.THANK_YOU_TEXT)
-        del _sessions[chat_id]
+        # Клієнт написав свій час текстом замість кнопки — теж приймаємо.
+        _finalize_lead(chat_id, session, message.text, fallback_name=message.from_user.full_name or "")
 
 
 def start_polling():
