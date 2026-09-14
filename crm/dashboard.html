@@ -463,9 +463,12 @@
       <div class="field"><label for="f-next-time">Час</label><input id="f-next-time" type="time"></div>
     </div>
     <div class="field">
-      <label for="f-autosend-script">🤖 Автонадсилання скрипту в цю дату (необов'язково)</label>
-      <select id="f-autosend-script"><option value="">— не надсилати автоматично —</option></select>
+      <label for="f-autosend-script">📋 Підготувати скрипт на цю дату (необов'язково)</label>
+      <select id="f-autosend-script"><option value="">— нічого не готувати —</option></select>
       <span class="muted" id="autoSendHint" style="font-size:12px;"></span>
+      <div class="quick-actions" id="quickSendBox" hidden>
+        <button type="button" class="btn small" id="quickSendBtn">📋✈️ Скопіювати і відкрити чат (написати особисто)</button>
+      </div>
     </div>
     <div class="quick-actions">
       <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
@@ -985,17 +988,20 @@
 
   function fillAutoSendSelect(stage, lead){
     const sel = document.getElementById('f-autosend-script');
-    sel.innerHTML = '<option value="">— не надсилати автоматично —</option>' +
+    sel.innerHTML = '<option value="">— нічого не готувати —</option>' +
       scriptsFor(stage).map(s => `<option value="${esc(s.id)}">${s.stage ? '⭐ ' : ''}${esc(s.title)}</option>`).join('');
     const hint = document.getElementById('autoSendHint');
+    const quickBox = document.getElementById('quickSendBox');
     if(lead?.autoSendText){
       const match = scripts.find(s => s.text === lead.autoSendText);
       sel.value = match ? String(match.id) : '';
       const preview = lead.autoSendText.length > 60 ? lead.autoSendText.slice(0,60)+'…' : lead.autoSendText;
-      hint.textContent = `Заплановано на ${lead.nextActionAt || 'дату вище'}: «${preview}»`;
+      hint.textContent = `Готово на ${lead.nextActionAt || 'дату вище'}: «${preview}» — коли настане час, скопіюйте й напишіть особисто.`;
+      quickBox.hidden = !intlPhone(lead.phone);
     } else {
       sel.value = '';
       hint.textContent = '';
+      quickBox.hidden = true;
     }
   }
 
@@ -1302,9 +1308,15 @@
     const s = scripts.find(s => String(s.id) === sel.value);
     if(!s){ hint.textContent = ''; return; }
     const preview = s.text.length > 60 ? s.text.slice(0,60)+'…' : s.text;
-    hint.textContent = document.getElementById('f-next-date').value
-      ? `Буде надіслано: «${preview}» — збережіть лід`
-      : `⚠️ Вкажіть дату вище, інакше не надішлеться. Буде надіслано: «${preview}»`;
+    hint.textContent = `Буде готово: «${preview}» — збережіть лід, у потрібну дату скопіюйте й напишіть особисто`;
+  });
+  document.getElementById('quickSendBtn').addEventListener('click', () => {
+    const lead = editingId ? leads.find(l=>l.id===editingId) : null;
+    if(!lead?.autoSendText) return;
+    const intl = intlPhone(lead.phone);
+    if(!intl) return;
+    copyText(lead.autoSendText);
+    window.open(`https://t.me/+${intl}`, '_blank', 'noopener');
   });
   document.getElementById('f-next-preset').addEventListener('change', () => {
     const presetEl = document.getElementById('f-next-preset');
