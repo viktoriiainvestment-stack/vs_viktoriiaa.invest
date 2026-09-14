@@ -76,15 +76,36 @@ def _send_question(chat_id, question):
     bot.send_message(chat_id, question["text"], reply_markup=_keyboard_for(question))
 
 
-def _send_card(chat_id, card):
-    """Надсилає картку проєкту — фото з підписом, якщо card["image"]
-    задано і файл є на диску, інакше просто текст."""
+PLACEHOLDER_IMAGE = CRM_DIR / "assets" / "placeholder.jpg"
+
+
+def _card_image_path(card):
+    """Файл фото для картки — її власне, або спільна заглушка, якщо
+    "image" не задано чи файл зник. Завжди фото (ніколи None), щоб
+    гортання стрілочками (edit_message_media) працювало однаково для
+    будь-якої картки — Telegram не дає перетворити повідомлення-фото
+    на текстове через edit, тож усі картки мають бути "фото"."""
     image_path = card.get("image") and CRM_DIR / card["image"]
-    if image_path and image_path.is_file():
-        with open(image_path, "rb") as photo:
-            bot.send_photo(chat_id, photo, caption=card["text"])
-    else:
-        bot.send_message(chat_id, card["text"])
+    return image_path if image_path and image_path.is_file() else PLACEHOLDER_IMAGE
+
+
+def _card_keyboard(index, total):
+    kb = types.InlineKeyboardMarkup()
+    if total > 1:
+        kb.row(
+            types.InlineKeyboardButton("◀", callback_data="cardnav:prev"),
+            types.InlineKeyboardButton(f"{index + 1}/{total}", callback_data="cardnav:noop"),
+            types.InlineKeyboardButton("▶", callback_data="cardnav:next"),
+        )
+    return kb
+
+
+def _send_card_carousel(chat_id, session, cards):
+    """Одне повідомлення-фото на всі підходящі картки замість купи
+    окремих — гортається стрілочками ◀/▶ (handle_card_nav нижче)."""
+    with open(_card_image_path(cards[0]), "rb") as photo:
+        msg = bot.send_photo(chat_id, photo, caption=cards[0]["text"], reply_markup=_card_keyboard(0, len(cards)))
+    session["carousel"] = {"cards": cards, "index": 0, "message_id": msg.message_id}
 
 
 def _send_cards_and_ask_phone(chat_id, session):
@@ -94,8 +115,7 @@ def _send_cards_and_ask_phone(chat_id, session):
     else:
         matched = [c for c in qd.UKRAINE_CARDS if qd.card_matches(c, answers)]
         if matched:
-            for card in matched:
-                _send_card(chat_id, card)
+            _send_card_carousel(chat_id, session, matched)
         elif answers.get("construction") == "ready":
             bot.send_message(chat_id, qd.READY_FALLBACK_TEXT)
         else:
@@ -162,7 +182,34 @@ if bot:
         # Дозволяє адміну дізнатись свій chat_id для ADMIN_TELEGRAM_CHAT_ID.
         bot.send_message(message.chat.id, f"Ваш chat_id: {message.chat.id}")
 
-    @bot.callback_query_handler(func=lambda c: True)
+    @bot.callback_query_handler(func=lambda c: c.data.startswith("cardnav:"))
+    def handle_card_nav(call):
+        chat_id = call.message.chat.id
+        session = _sessions.get(chat_id)
+        carousel = session and session.get("carousel")
+        direction = call.data.split(":", 1)[1]
+        if not carousel or direction == "noop":
+            bot.answer_callback_query(call.id)
+            return
+
+        cards = carousel["cards"]
+        step = 1 if direction == "next" else -1
+        carousel["index"] = (carousel["index"] + step) % len(cards)
+        card = cards[carousel["index"]]
+        try:
+            with open(_card_image_path(card), "rb") as photo:
+                media = types.InputMediaPhoto(photo, caption=card["text"])
+                bot.edit_message_media(
+                    media, chat_id, call.message.message_id,
+                    reply_markup=_card_keyboard(carousel["index"], len(cards)),
+                )
+            bot.answer_callback_query(call.id)
+        except Exception:
+            print("Не вдалось погортати картки:", flush=True)
+            traceback.print_exc()
+            bot.answer_callback_query(call.id, "Не вдалось оновити картку, спробуйте ще раз")
+
+    @bot.callback_query_handler(func=lambda c: not c.data.startswith("cardnav:"))
     def handle_answer(call):
         chat_id = call.message.chat.id
         session = _sessions.get(chat_id)
