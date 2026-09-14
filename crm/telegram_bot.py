@@ -1,5 +1,7 @@
 import os
 import re
+import time
+import traceback
 
 import telebot
 from telebot import types
@@ -94,6 +96,13 @@ if bot:
 
 def start_polling():
     if not bot:
-        print("TELEGRAM_CRM_BOT_TOKEN не задано — CRM-бот Telegram вимкнено.")
+        print("TELEGRAM_CRM_BOT_TOKEN не задано — CRM-бот Telegram вимкнено.", flush=True)
         return
-    bot.infinity_polling(skip_pending=True)
+    print(f"CRM-бот стартує (токен закінчується на ...{TOKEN[-4:]})", flush=True)
+    while True:
+        try:
+            bot.infinity_polling(skip_pending=True)
+        except Exception:
+            print("CRM-бот впав з помилкою:", flush=True)
+            traceback.print_exc()
+            time.sleep(5)

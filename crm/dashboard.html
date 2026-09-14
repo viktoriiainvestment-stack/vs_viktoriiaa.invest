@@ -1401,7 +1401,7 @@
     if(!token){ promptLogin(); if(!token) return; }
     leadsCol = makeRestCollection('/api/leads');
     scriptsCol = makeRestCollection('/api/scripts');
-    const deepLinkId = new URLSearchParams(location.search).get('lead');
+    const deepLinkId = Number(new URLSearchParams(location.search).get('lead'));
     let deepLinkHandled = false;
     leadsCol.onSnapshot(
       (snap) => {
