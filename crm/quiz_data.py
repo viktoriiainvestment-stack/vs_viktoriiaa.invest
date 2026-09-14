@@ -103,6 +103,7 @@ QUESTIONS = [Q_REGION, Q_CONSTRUCTION, Q_FORMAT, Q_TIMING]
 UKRAINE_CARDS = [
     {
         "key": "leleka",
+        "image": "assets/leleka.jpg",
         "criteria": {
             # Явно вказано в тексті: розтермінування від $19,000, 100% від $50,000.
             "format": ["installment", "full_payment"],
