@@ -225,6 +225,13 @@
   }
   .drawer-head h2{font-size:18px; font-weight:700;}
   .drawer-body{padding:18px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:1;}
+  .drawer-lead-only, .drawer-task-only{display:flex; flex-direction:column; gap:14px;}
+  .task-panel-head{
+    border:1px solid var(--accent); border-radius:16px; padding:14px; background:var(--accent-soft);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .task-panel-head .who{font-weight:700; font-family:'Plus Jakarta Sans',sans-serif;}
+  .task-panel-head .what{font-size:13px; color:var(--ink-soft);}
   .drawer-foot{padding:16px 20px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:8px;}
   .field{display:flex; flex-direction:column; gap:5px;}
   .field label{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
@@ -420,6 +427,11 @@
     <button class="close-x" id="closeDrawer" aria-label="Закрити">✕</button>
   </div>
   <div class="drawer-body">
+    <div class="tabs" id="drawerTabs" hidden>
+      <button type="button" class="tab-btn active" id="drawerTabLeadBtn">👤 Лід</button>
+      <button type="button" class="tab-btn" id="drawerTabTaskBtn">📅 Задача</button>
+    </div>
+    <div class="drawer-lead-only">
     <div class="section-label">🎯 Основне</div>
     <div class="field-row">
       <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
@@ -446,7 +458,10 @@
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
     </div>
     <div class="field"><label for="f-source">Джерело</label><input id="f-source" type="text" placeholder="Рекомендація, реклама, сайт…"></div>
+    </div>
 
+    <div class="drawer-task-only">
+    <div class="task-panel-head" id="taskPanelHead" hidden></div>
     <div class="section-label">📅 Наступний крок</div>
     <div class="field">
       <label for="f-next-preset">Тип завдання</label>
@@ -477,7 +492,13 @@
       <a id="gcalLink" href="#" target="_blank" rel="noopener" hidden>☑️ Додати завдання в Google Calendar</a>
       <span class="muted" id="gcalHint" style="font-size:12px;">Заповніть завдання, дату і час, збережіть лід — з'явиться кнопка</span>
     </div>
+    <div class="quick-actions">
+      <button type="button" class="btn primary small" id="completeTaskBtn">✅ Завдання виконано</button>
+      <button type="button" class="btn small ghost" id="showLeadFromTaskBtn">👤 Показати картку ліда повністю</button>
+    </div>
+    </div>
 
+    <div class="drawer-lead-only">
     <div class="section-label">💬 Написати ліду</div>
     <div class="box" id="sendBox" hidden>
       <div class="muted" id="sendChannelHint">Обираєте скрипт → «Надіслати» відкриє Telegram із готовим текстом — лишиться натиснути «Надіслати» вже там.</div>
@@ -510,6 +531,7 @@
         <input id="quickNote" type="text" placeholder="Швидка нотатка з датою…">
         <button class="btn small" id="addNoteBtn">+ Додати</button>
       </div>
+    </div>
     </div>
   </div>
   <div class="drawer-foot">
@@ -1131,7 +1153,18 @@
     link.hidden = false; hint.hidden = true;
   }
 
-  function openDrawer(lead){
+  function switchDrawerTab(tab){
+    const isTask = tab === 'task';
+    document.querySelectorAll('.drawer-lead-only').forEach(el => el.hidden = isTask);
+    document.querySelectorAll('.drawer-task-only').forEach(el => el.hidden = !isTask);
+    document.getElementById('drawerTabLeadBtn').classList.toggle('active', !isTask);
+    document.getElementById('drawerTabTaskBtn').classList.toggle('active', isTask);
+    const body = document.querySelector('#drawer .drawer-body');
+    if(body) body.scrollTop = 0;
+    if(!isTask) document.getElementById('f-name').focus();
+  }
+
+  function openDrawer(lead, focusTask){
     editingId = lead ? lead.id : null;
     document.getElementById('drawerTitle').textContent = lead ? 'Картка ліда' : 'Новий лід';
     document.getElementById('f-name').value = lead?.name || '';
@@ -1164,12 +1197,38 @@
     updateGcalLink();
     updateSendTelegramLink();
     checkDuplicate();
+    document.getElementById('drawerTabs').hidden = !lead;
+    const taskHead = document.getElementById('taskPanelHead');
+    if(lead){
+      taskHead.hidden = false;
+      taskHead.innerHTML = `
+        <span class="who">${esc(lead.name || lead.phone || '(без імені)')}</span>
+        <span class="what">${lead.nextAction ? esc(lead.nextAction) : 'Завдання ще не задане нижче'}${lead.nextActionAt ? ' · ' + esc(lead.nextActionAt) : ''}</span>
+      `;
+    } else {
+      taskHead.hidden = true;
+    }
     drawer.hidden = false;
     scrim.hidden = false;
-    document.getElementById('f-name').focus();
+    switchDrawerTab(lead && focusTask ? 'task' : 'lead');
   }
   function closeDrawer(){
     drawer.hidden = true; scrim.hidden = true; editingId = null;
+  }
+
+  async function completeTask(){
+    if(!editingId) return;
+    const updates = {nextAction:'', nextActionAt:'', nextActionTime:'', autoSendText:''};
+    if(!leadsCol){
+      const l = leads.find(x=>x.id===editingId);
+      if(l) Object.assign(l, updates);
+      render();
+    } else {
+      try{ await leadsCol.doc(editingId).update(updates); }
+      catch(e){ console.error(e); return; }
+    }
+    toast('Завдання виконано ✅');
+    closeDrawer();
   }
 
   function currentFormData(){
@@ -1324,13 +1383,17 @@
   });
   taskList.addEventListener('click', (e) => {
     const row = e.target.closest('.task-row');
-    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead, true); }
   });
 
   document.getElementById('addLeadBtn').addEventListener('click', ()=>openDrawer(null));
   document.getElementById('exportBtn').addEventListener('click', exportCsv);
   document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
   document.getElementById('saveLeadBtn').addEventListener('click', saveLead);
+  document.getElementById('drawerTabLeadBtn').addEventListener('click', ()=>switchDrawerTab('lead'));
+  document.getElementById('drawerTabTaskBtn').addEventListener('click', ()=>switchDrawerTab('task'));
+  document.getElementById('showLeadFromTaskBtn').addEventListener('click', ()=>switchDrawerTab('lead'));
+  document.getElementById('completeTaskBtn').addEventListener('click', completeTask);
   document.getElementById('deleteLeadBtn').addEventListener('click', deleteLead);
   document.getElementById('addNoteBtn').addEventListener('click', addQuickNote);
   document.getElementById('f-next').addEventListener('input', updateGcalLink);
@@ -1405,11 +1468,11 @@
   });
   tasksListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
-    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead, true); }
   });
   broadcastListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
-    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead); }
+    if(row){ const lead = leads.find(l=>l.id===Number(row.dataset.id)); if(lead) openDrawer(lead, true); }
   });
   dealsListEl.addEventListener('click', (e)=>{
     const row = e.target.closest('.task-list-row');
