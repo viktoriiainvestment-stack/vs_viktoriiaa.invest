@@ -117,12 +117,20 @@ def _card_keyboard(index, total):
     return kb
 
 
+def _card_short_name(card):
+    """Перший рядок тексту картки (з емодзі) — коротка назва проєкту
+    для показу в СРМ (поле «Проєкт/оффер»), щоб на картці ліда було
+    одразу видно, про який об'єкт ідеться, без відкриття нотаток."""
+    return card["text"].strip().splitlines()[0].strip()
+
+
 def _send_card_carousel(chat_id, session, cards):
     """Одне повідомлення-фото на всі підходящі картки замість купи
     окремих — гортається стрілочками ◀/▶ (handle_card_nav нижче)."""
     with open(_card_image_path(cards[0]), "rb") as photo:
         msg = bot.send_photo(chat_id, photo, caption=cards[0]["text"], reply_markup=_card_keyboard(0, len(cards)))
     session["carousel"] = {"cards": cards, "index": 0, "message_id": msg.message_id}
+    session["shown_offer"] = ", ".join(_card_short_name(c) for c in cards)
 
 
 def _send_cards_and_ask_phone(chat_id, session):
@@ -177,6 +185,7 @@ def _finalize_lead(chat_id, session, call_time_label, fallback_name=""):
         "leadSource": "quiz",
         "channel": "quiz_bot",
         "externalId": str(chat_id),
+        "offer": session.get("shown_offer", ""),
         "notes": notes,
         "nextAction": next_action,
         "nextActionAt": next_action_at,
