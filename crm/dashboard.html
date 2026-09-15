@@ -205,11 +205,13 @@
   .stepper button:disabled{opacity:.3; cursor:default;}
   .stepper button:disabled:hover{color:var(--ink-soft); border-color:var(--line);}
   .card-chat{display:flex; gap:3px;}
-  .card-chat a{
+  .card-chat a, .card-chat button{
     width:23px; height:23px; border-radius:999px; border:1px solid var(--line); background:var(--surface);
     display:flex; align-items:center; justify-content:center; font-size:12px; text-decoration:none;
+    cursor:pointer; padding:0; font-family:inherit;
   }
-  .card-chat a:hover{border-color:var(--accent);}
+  .card-chat a:hover, .card-chat button:hover{border-color:var(--accent);}
+  .card-chat button.chat-prompt-btn{opacity:.55; border-style:dashed;}
 
   .scrim{position:fixed; inset:0; background:rgba(14,21,38,.38); backdrop-filter:blur(2px); z-index:20;}
   .drawer{
@@ -426,6 +428,7 @@
         <input id="f-phone" type="text" placeholder="+380…">
       </div>
     </div>
+    <div class="field"><label for="f-tg">Telegram-нік (якщо немає номера)</label><input id="f-tg" type="text" placeholder="@nick"></div>
     <div class="dup-warning" id="dupWarning" hidden></div>
     <div class="quick-actions" id="quickActions"></div>
     <div class="field-row">
@@ -761,20 +764,36 @@
 
   function matchesQuery(l){
     if(!query) return true;
-    const hay = [l.name,l.phone,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo,l.nextAction,l.leadSource].join(' ').toLowerCase();
+    const hay = [l.name,l.phone,l.tgUsername,l.portrait,l.offer,l.diagnosis,l.notes,l.dealInfo,l.nextAction,l.leadSource].join(' ').toLowerCase();
     return hay.includes(query);
   }
 
-  function chatLinksHtml(phone){
-    const intl = intlPhone(phone);
-    if(!intl) return '';
-    return `
-      <div class="card-chat">
-        <a href="https://t.me/+${intl}" target="_blank" rel="noopener" title="Написати в Telegram">✈️</a>
+  function chatLinksHtml(l){
+    const intl = intlPhone(l.phone);
+    const tgHref = intl ? `https://t.me/+${intl}` : (l.tgUsername ? `https://t.me/${l.tgUsername}` : '');
+    const tgBtn = tgHref
+      ? `<a href="${tgHref}" target="_blank" rel="noopener" title="Написати в Telegram">✈️</a>`
+      : `<button type="button" class="chat-prompt-btn" data-contact-prompt="${esc(l.id)}" title="Немає номера чи ніка — натисніть, щоб додати">✈️</button>`;
+    const rest = intl ? `
         <a href="viber://chat?number=%2B${intl}" title="Написати у Viber">💜</a>
         <a href="tel:+${intl}" title="Подзвонити">📞</a>
-      </div>
-    `;
+    ` : '';
+    return `<div class="card-chat">${tgBtn}${rest}</div>`;
+  }
+
+  async function promptAndSaveContact(leadId){
+    const lead = leads.find(l=>l.id===leadId);
+    if(!lead) return;
+    const raw = window.prompt('У цього ліда немає номера чи Telegram-ніка.\nВведіть номер телефону (+380…) або Telegram-нік (@nick):');
+    if(!raw) return;
+    const trimmed = raw.trim();
+    const looksLikePhone = /^[\d+\-\s()]+$/.test(trimmed) && !trimmed.startsWith('@');
+    const updates = looksLikePhone ? {phone: trimmed} : {tgUsername: trimmed.replace(/^@/, '')};
+    if(!leadsCol){ Object.assign(lead, updates); render(); }
+    else { try{ await leadsCol.doc(leadId).update(updates); }catch(e){ console.error(e); return; } }
+    const intl = intlPhone(updates.phone || lead.phone);
+    const tgHref = intl ? `https://t.me/+${intl}` : `https://t.me/${(updates.tgUsername || lead.tgUsername || '').replace(/^@/, '')}`;
+    window.open(tgHref, '_blank', 'noopener');
   }
 
   function cardHtml(l){
@@ -801,7 +820,7 @@
           ${l.diagnosis ? `<span class="badge outline">${esc(l.diagnosis)}</span>` : ''}
         </div>
         <div class="card-foot">
-          ${chatLinksHtml(l.phone)}
+          ${chatLinksHtml(l)}
           <div class="stepper">
             <button data-move="prev" data-id="${esc(l.id)}" ${idx<=0?'disabled':''} title="Назад по воронці">‹</button>
             <button data-move="next" data-id="${esc(l.id)}" ${idx>=ALL_STAGES.length-1?'disabled':''} title="Вперед по воронці — просуне в «Угоди», коли лід стане інвестором">›</button>
@@ -930,7 +949,7 @@
   }
 
   const CSV_COLUMNS = [
-    ['Ім\'я','name'], ['Телефон','phone'], ['Стадія', l=>stageLabel(l.stage)],
+    ['Ім\'я','name'], ['Телефон','phone'], ['Telegram-нік','tgUsername'], ['Стадія', l=>stageLabel(l.stage)],
     ['Оффер','offer'], ['Джерело','leadSource'],
     ['Портрет','portrait'], ['Діагностика','diagnosis'], ['Пропозиція','proposal'],
     ['Рішення','decision'], ['Деталі угоди','dealInfo'], ['Дата угоди','dealDate'],
@@ -1008,7 +1027,14 @@
   function renderQuickActions(lead){
     const box = document.getElementById('quickActions');
     const intl = intlPhone(lead?.phone);
-    if(!intl){ box.innerHTML = ''; return; }
+    if(!intl){
+      if(lead?.tgUsername){
+        box.innerHTML = `<a href="https://t.me/${esc(lead.tgUsername)}" target="_blank" rel="noopener">✈️ Telegram (@${esc(lead.tgUsername)})</a>`;
+      } else {
+        box.innerHTML = '';
+      }
+      return;
+    }
     box.innerHTML = `
       <a href="tel:+${intl}">📞 Подзвонити</a>
       <a href="https://t.me/+${intl}" target="_blank" rel="noopener">✈️ Telegram</a>
@@ -1110,6 +1136,7 @@
     document.getElementById('drawerTitle').textContent = lead ? 'Картка ліда' : 'Новий лід';
     document.getElementById('f-name').value = lead?.name || '';
     document.getElementById('f-phone').value = lead?.phone || '';
+    document.getElementById('f-tg').value = lead?.tgUsername || '';
     document.getElementById('f-stage').value = lead?.stage || 'cold';
     document.getElementById('f-offer').value = lead?.offer || '';
     document.getElementById('f-source').value = lead?.leadSource || '';
@@ -1149,6 +1176,7 @@
     return {
       name: document.getElementById('f-name').value.trim(),
       phone: document.getElementById('f-phone').value.trim(),
+      tgUsername: document.getElementById('f-tg').value.trim().replace(/^@/, ''),
       stage: document.getElementById('f-stage').value,
       offer: document.getElementById('f-offer').value.trim(),
       leadSource: document.getElementById('f-source').value.trim(),
@@ -1279,6 +1307,12 @@
     if(moveBtn){
       e.stopPropagation();
       moveStage(Number(moveBtn.dataset.id), moveBtn.dataset.move);
+      return;
+    }
+    const promptBtn = e.target.closest('[data-contact-prompt]');
+    if(promptBtn){
+      e.stopPropagation();
+      promptAndSaveContact(Number(promptBtn.dataset.contactPrompt));
       return;
     }
     if(e.target.closest('.card-chat')) return;

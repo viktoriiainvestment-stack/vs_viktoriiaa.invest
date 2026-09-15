@@ -23,7 +23,7 @@ FIELDS = [
     "prevContact", "portrait", "diagnosis", "offer", "proposal", "decision",
     "dealInfo", "dealDate", "commission", "notes", "externalId",
     "nextAction", "nextActionAt", "nextActionTime", "sortOrder",
-    "autoSendText",
+    "autoSendText", "tgUsername",
 ]
 
 
@@ -53,11 +53,12 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_leads_channel_external ON leads(channel, externalId)")
-    # Міграція для баз, створених до додавання "autoSendText".
-    try:
-        conn.execute("ALTER TABLE leads ADD COLUMN autoSendText TEXT DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass  # колонка вже є
+    # Міграція для баз, створених до додавання "autoSendText"/"tgUsername".
+    for col in ("autoSendText", "tgUsername"):
+        try:
+            conn.execute(f"ALTER TABLE leads ADD COLUMN {col} TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass  # колонка вже є
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS scripts (
