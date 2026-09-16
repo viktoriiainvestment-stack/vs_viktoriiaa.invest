@@ -2057,6 +2057,7 @@
   const NAV_LABELS = {board:'Воронка', tasks:'Задачі', deals:'Угоди', inactive:'Не актуально', projects:'🏗 Проєкти', settings:'⚙️ Налаштування'};
 
   function switchTab(view){
+    statsEl.hidden = view !== 'board';
     boardView.hidden = view !== 'board';
     tasksView.hidden = view !== 'tasks';
     dealsView.hidden = view !== 'deals';
