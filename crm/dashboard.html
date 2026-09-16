@@ -242,6 +242,15 @@
   .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
   .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
 
+  .script-preview{
+    border:1px solid var(--line); border-radius:11px; padding:9px 12px; font-size:14px;
+    background:var(--surface-soft); color:var(--ink); font-family:inherit;
+    min-height:64px; white-space:pre-wrap; word-break:break-word; outline:none;
+  }
+  .script-preview:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
+  .script-preview:empty::before{content:attr(data-placeholder); color:var(--ink-faint);}
+  .tag-missing{color:var(--danger); font-weight:700;}
+
   .efield{
     display:flex; align-items:flex-start; gap:2px; border-radius:12px;
     padding:9px 10px; margin:0 -10px; cursor:pointer; transition:background .12s ease;
@@ -651,7 +660,7 @@
     <div class="box" id="sendBox" hidden>
       <div class="muted" id="sendChannelHint">Обираєте скрипт → «Надіслати» відкриє Telegram із готовим текстом — лишиться натиснути «Надіслати» вже там.</div>
       <select id="sendScriptSelect"><option value="">— обрати скрипт —</option></select>
-      <textarea id="sendText" rows="3" placeholder="Текст повідомлення…"></textarea>
+      <div id="sendText" class="script-preview" contenteditable="true" data-placeholder="Текст повідомлення…"></div>
       <div class="quick-actions">
         <button type="button" id="sendTelegramLink" class="disabled">✈️ Надіслати</button>
       </div>
@@ -735,7 +744,11 @@
   <div class="drawer-body">
     <div class="field"><label for="ns-title">Назва</label><input id="ns-title" type="text" placeholder="Наприклад: Заперечення «дорого»"></div>
     <div class="field"><label for="ns-stage">Стадія воронки</label><select id="ns-stage"><option value="">— Будь-яка стадія —</option></select></div>
-    <div class="field"><label for="ns-text">Текст</label><textarea id="ns-text" rows="4" placeholder="Готовий текст повідомлення…"></textarea></div>
+    <div class="field">
+      <label for="ns-text">Текст</label>
+      <textarea id="ns-text" rows="4" placeholder="Готовий текст повідомлення…"></textarea>
+      <span class="muted" style="font-size:11.5px;">Теги, які підставляться з картки ліда: {{імя}} {{проєкт}} {{бюджет}} {{локація}} {{термін}} {{мета}} — якщо поле в ліда порожнє, замість тегу підсвітиться червоним, що треба дописати вручну.</span>
+    </div>
     <button class="btn primary small" id="addScriptBtn" style="align-self:flex-start;">Додати скрипт</button>
     <div id="scriptsList" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;"></div>
   </div>
@@ -1439,6 +1452,47 @@
     return matched.length ? matched : scripts;
   }
 
+  // Теги в тексті скрипту — {{імя}}, {{бюджет}} і т.д. — підставляються
+  // даними ліда. Немає значення в картці — підставляємо червону
+  // позначку замість тексту, щоб було видно, що треба дописати вручну.
+  const SCRIPT_TAGS = [
+    {tag: 'імя', field: 'name', label: "Ім'я"},
+    {tag: 'проєкт', field: 'offer', label: 'Проєкт'},
+    {tag: 'бюджет', field: 'budget', label: 'Бюджет'},
+    {tag: 'локація', field: 'location', label: 'Локація'},
+    {tag: 'термін', field: 'dealTerm', label: 'Термін угоди'},
+    {tag: 'мета', field: 'investGoal', label: 'Мета інвестування'},
+  ];
+
+  function renderScriptTemplate(template, lead){
+    let html = '';
+    let plain = '';
+    let lastIndex = 0;
+    const re = /\{\{\s*([^}]+?)\s*\}\}/g;
+    let m;
+    while((m = re.exec(template))){
+      const before = template.slice(lastIndex, m.index);
+      html += esc(before);
+      plain += before;
+      const key = m[1].trim().toLowerCase();
+      const def = SCRIPT_TAGS.find(t => t.tag === key);
+      const value = def ? (lead?.[def.field] || '').trim() : '';
+      if(def && value){
+        html += esc(value);
+        plain += value;
+      } else {
+        const label = def ? def.label.toUpperCase() : m[1].toUpperCase();
+        html += `<span class="tag-missing">[${esc(label)}]</span>`;
+        plain += `[${label}]`;
+      }
+      lastIndex = re.lastIndex;
+    }
+    const rest = template.slice(lastIndex);
+    html += esc(rest);
+    plain += rest;
+    return {html, plain};
+  }
+
   function fillScriptSelect(stage){
     const sel = document.getElementById('sendScriptSelect');
     sel.innerHTML = '<option value="">— обрати скрипт —</option>' +
@@ -1498,7 +1552,7 @@
     const hint = document.getElementById('sendChannelHint');
     const lead = leads.find(l=>l.id===editingId);
     const intl = intlPhone(lead?.phone);
-    const text = document.getElementById('sendText').value.trim();
+    const text = document.getElementById('sendText').textContent.trim();
     const botChannel = lead && lead.externalId && (['telegram','quiz_bot'].includes(lead.channel));
     if((!intl && !botChannel) || !text){
       link.classList.add('disabled');
@@ -1515,14 +1569,14 @@
 
   async function sendMessageToLead(){
     const lead = leads.find(l=>l.id===editingId);
-    const text = document.getElementById('sendText').value.trim();
+    const text = document.getElementById('sendText').textContent.trim();
     if(!lead || !text) return;
     const botChannel = lead.externalId && (['telegram','quiz_bot'].includes(lead.channel));
     if(botChannel){
       try{
         await apiFetch(`/api/leads/${editingId}/send`, {method:'POST', body: JSON.stringify({text})});
         toast('Надіслано через бота');
-        document.getElementById('sendText').value = '';
+        document.getElementById('sendText').textContent = '';
         updateSendTelegramLink();
       }catch(e){ toast('Не вдалося надіслати: ' + e.message); }
       return;
@@ -1626,7 +1680,7 @@
     document.getElementById('deleteLeadBtn').hidden = !lead;
     document.getElementById('sendBox').hidden = !lead;
     document.getElementById('sendScriptSelect').value = '';
-    document.getElementById('sendText').value = '';
+    document.getElementById('sendText').textContent = '';
     fillScriptSelect(lead?.stage);
     fillAutoSendSelect(lead?.stage, lead);
     renderQuickActions(lead);
@@ -1887,7 +1941,10 @@
   document.getElementById('logAttemptBtn').addEventListener('click', logContactAttempt);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
-    if(s) document.getElementById('sendText').value = s.text;
+    if(s){
+      const lead = leads.find(l=>l.id===editingId);
+      document.getElementById('sendText').innerHTML = renderScriptTemplate(s.text, lead).html;
+    }
     updateSendTelegramLink();
   });
   document.getElementById('sendText').addEventListener('input', updateSendTelegramLink);
