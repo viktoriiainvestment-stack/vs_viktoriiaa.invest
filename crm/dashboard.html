@@ -122,16 +122,52 @@
   .btn.small{padding:6px 12px; font-size:12.5px;}
   .btn[disabled]{opacity:.4; cursor:default;}
 
-  .stats{
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;
+  .navrow{
+    display:flex; gap:5px; overflow-x:auto; padding-bottom:2px;
+    scrollbar-width:none;
   }
-  .stat{
-    background:var(--surface); border:1px solid var(--line); border-radius:16px;
-    padding:14px 16px; display:flex; flex-direction:column; gap:4px; box-shadow:var(--shadow);
+  .navrow::-webkit-scrollbar{display:none;}
+  .navchip{
+    flex:none; border:none; background:var(--surface); color:var(--ink-soft);
+    padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700;
+    white-space:nowrap; cursor:pointer; font-family:inherit; box-shadow:var(--shadow);
   }
-  .stat .label{font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:600;}
-  .stat .value{font-family:'Plus Jakarta Sans',sans-serif; font-size:25px; font-weight:700; font-variant-numeric:tabular-nums;}
-  .stat .dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px;}
+  .navchip.active{background:var(--accent); color:var(--accent-ink); box-shadow:none;}
+
+  .ministrip{display:flex; gap:8px;}
+  .minitile{
+    flex:1; background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:11px 14px; display:flex; flex-direction:column; gap:3px; box-shadow:var(--shadow);
+  }
+  .minitile .lbl{font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint);}
+  .minitile .val{font-family:'Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .minitile.warn .val{color:var(--danger);}
+  .minitile.good .val{color:var(--good);}
+
+  .funnelbox{
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:16px 18px 14px; box-shadow:var(--shadow);
+  }
+  .funnelbox h3{font-size:13px; font-weight:700; margin:0 0 12px; display:flex; align-items:center; gap:6px;}
+  .fstage{
+    position:relative; height:46px; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 3px; color:#fff; font-weight:700; font-size:13px;
+    font-family:'Plus Jakarta Sans',sans-serif;
+  }
+  .fstage .fcount{font-variant-numeric:tabular-nums; margin-left:6px; opacity:.92;}
+  .fstage .fpct{
+    position:absolute; right:10px; font-size:10.5px; font-weight:700; opacity:.85;
+    font-variant-numeric:tabular-nums;
+  }
+  .fdrop{
+    text-align:center; font-size:10px; color:var(--ink-faint); margin:1px 0 4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .finactive{
+    margin-top:12px; padding-top:10px; border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--ink-soft);
+  }
+  .finactive b{color:var(--ink); font-variant-numeric:tabular-nums;}
 
   .task-banner{
     background:var(--accent-soft); border:1px solid var(--accent); border-radius:16px; padding:14px 16px;
@@ -312,20 +348,6 @@
     border:1px solid var(--danger); border-radius:10px; padding:8px 12px; cursor:pointer;
   }
 
-  .funnel{
-    background:var(--surface); border:1px solid var(--line); border-radius:16px;
-    padding:14px 16px; margin-bottom:14px; box-shadow:var(--shadow);
-    display:flex; flex-direction:column; gap:8px;
-  }
-  .funnel-row{display:flex; align-items:center; gap:10px;}
-  .funnel-label{width:118px; flex:none; font-size:12.5px; font-weight:600; color:var(--ink-soft);}
-  .funnel-track{flex:1; background:var(--surface-soft); border-radius:8px; height:26px; overflow:hidden;}
-  .funnel-fill{
-    height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px;
-    color:#fff; font-weight:700; font-size:12px; white-space:nowrap; min-width:26px;
-    transition:width .2s;
-  }
-  .funnel-pct{width:48px; flex:none; text-align:right; font-size:11.5px; color:var(--ink-faint); font-variant-numeric:tabular-nums;}
   .close-x{
     border:none; background:transparent; color:var(--ink-soft); cursor:pointer;
     width:30px; height:30px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:16px;
@@ -370,14 +392,6 @@
     font-size:13.5px; font-weight:600; cursor:pointer;
   }
   .tab-btn.active{background:var(--accent); color:var(--accent-ink);}
-
-  .nav-menu-btn{display:flex; align-items:center; gap:8px; font-size:14px;}
-  .nav-list{display:flex; flex-direction:column; gap:6px; padding-top:4px;}
-  .nav-item{
-    width:100%; text-align:left; border-radius:12px; padding:11px 14px; font-size:14.5px;
-    background:var(--surface-soft);
-  }
-  .nav-item.active{background:var(--accent); color:var(--accent-ink);}
 
   .filters-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
   .filters-row label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
@@ -439,7 +453,6 @@
       <p>Воронка лідів · інвестиційна нерухомість</p>
     </div>
     <div class="topbar-actions">
-      <button class="btn nav-menu-btn" id="navMenuBtn" aria-label="Меню розділів">☰ <span id="navMenuLabel">Воронка</span></button>
       <div class="filters-row" title="Фільтр за місяцем, коли лід зайшов у CRM — діє на всі вкладки">
         <label for="entryMonthFilter">Місяць:</label>
         <select id="entryMonthFilter"><option value="">Усі місяці</option></select>
@@ -454,16 +467,28 @@
     </div>
   </header>
 
+  <div class="navrow" id="navRow">
+    <button class="navchip active" id="tabBoardBtn" type="button">Воронка</button>
+    <button class="navchip" id="tabTasksBtn" type="button">Задачі</button>
+    <button class="navchip" id="tabDealsBtn" type="button">Угоди</button>
+    <button class="navchip" id="tabInactiveBtn" type="button">Не актуально</button>
+    <button class="navchip" id="tabProjectsBtn" type="button">🏗 Проєкти</button>
+    <button class="navchip" id="tabSettingsBtn" type="button">⚙️ Налаштування</button>
+  </div>
+
   <div id="dbBanner" class="banner" hidden></div>
   <div id="taskBanner" class="task-banner" hidden>
     <h3>📋 Завдання на сьогодні й прострочені</h3>
     <div id="taskList"></div>
   </div>
 
-  <section class="stats" id="stats"></section>
-
   <div id="boardView">
-    <div class="funnel" id="funnelChart"></div>
+    <div class="ministrip" id="ministrip"></div>
+    <div class="funnelbox">
+      <h3>🔻 Воронка лідів</h3>
+      <div id="funnel"></div>
+      <div class="finactive" id="finactive"></div>
+    </div>
     <main class="board" id="board"></main>
   </div>
 
@@ -784,21 +809,6 @@
   </div>
 </aside>
 
-<aside class="drawer nav-drawer" id="navDrawer" hidden>
-  <div class="drawer-head">
-    <h2>Розділи</h2>
-    <button class="close-x" id="closeNavDrawer" aria-label="Закрити">✕</button>
-  </div>
-  <div class="drawer-body nav-list">
-    <button class="tab-btn nav-item active" id="tabBoardBtn" type="button">Воронка</button>
-    <button class="tab-btn nav-item" id="tabTasksBtn" type="button">Задачі</button>
-    <button class="tab-btn nav-item" id="tabDealsBtn" type="button">Угоди</button>
-    <button class="tab-btn nav-item" id="tabInactiveBtn" type="button">Не актуально</button>
-    <button class="tab-btn nav-item" id="tabProjectsBtn" type="button">🏗 Проєкти</button>
-    <button class="tab-btn nav-item" id="tabSettingsBtn" type="button">⚙️ Налаштування</button>
-  </div>
-</aside>
-
 <aside class="drawer" id="scriptsDrawer" hidden>
   <div class="drawer-head">
     <h2>Скрипти повідомлень</h2>
@@ -847,14 +857,14 @@
     [...ALL_STAGES, INACTIVE_STAGE].map(s => `<option value="${s.key}">${esc(s.label)}</option>`).join('');
 
   const boardEl = document.getElementById('board');
-  const statsEl = document.getElementById('stats');
+  const ministripEl = document.getElementById('ministrip');
+  const finactiveEl = document.getElementById('finactive');
   const searchEl = document.getElementById('search');
   const bannerEl = document.getElementById('dbBanner');
   const taskBanner = document.getElementById('taskBanner');
   const taskList = document.getElementById('taskList');
   const drawer = document.getElementById('drawer');
   const scriptsDrawer = document.getElementById('scriptsDrawer');
-  const navDrawer = document.getElementById('navDrawer');
   const scrim = document.getElementById('scrim');
   const toastEl = document.getElementById('toast');
   const boardView = document.getElementById('boardView');
@@ -876,7 +886,7 @@
   const tabProjectsBtn = document.getElementById('tabProjectsBtn');
   const tabSettingsBtn = document.getElementById('tabSettingsBtn');
   const entryMonthFilterEl = document.getElementById('entryMonthFilter');
-  const funnelEl = document.getElementById('funnelChart');
+  const funnelEl = document.getElementById('funnel');
 
   let leads = [];
   let scripts = [];
@@ -1226,36 +1236,32 @@
 
   function renderStats(){
     const total = visibleLeads().length;
-    const byStage = {};
-    ALL_STAGES.forEach(s => byStage[s.key] = 0);
     let commissionSum = 0;
-    let dealsCount = 0;
     let inactiveCount = 0;
     const today = todayStr();
     let dueCount = 0;
     visibleLeads().forEach(l => {
-      byStage[l.stage] = (byStage[l.stage]||0) + 1;
-      if(DEAL_STAGE_KEYS.includes(l.stage)) dealsCount++;
       if(l.stage === 'inactive') inactiveCount++;
       if(l.stage === 'client') commissionSum += parseCommission(l.commission);
       if(l.nextActionAt && l.nextActionAt <= today) dueCount++;
     });
     const tiles = [
       {label:'Усього лідів', value: total},
-      ...BOARD_STAGES.map(s => ({label:s.label, value: byStage[s.key]||0, color:s.color})),
-      {label:'Угоди (інвестор+клієнт)', value: dealsCount, color:'var(--stage-investor)'},
-      {label:'Не актуально', value: inactiveCount, color:'var(--ink-faint)'},
-      {label:'Завдання сьогодні', value: dueCount, color: dueCount ? 'var(--danger)' : null},
-      {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', color:'var(--good)'},
+      {label:'Завдання сьогодні', value: dueCount, cls: dueCount ? 'warn' : ''},
+      {label:'Комісія з угод', value: commissionSum ? '$' + commissionSum.toLocaleString('uk-UA') : '—', cls:'good'},
     ];
-    statsEl.innerHTML = tiles.map(t => `
-      <div class="stat">
-        <span class="label">${t.color ? `<span class="dot" style="background:${t.color}"></span>`:''}${esc(t.label)}</span>
-        <span class="value">${esc(t.value)}</span>
+    ministripEl.innerHTML = tiles.map(t => `
+      <div class="minitile ${t.cls||''}">
+        <span class="lbl">${esc(t.label)}</span>
+        <span class="val">${esc(t.value)}</span>
       </div>
     `).join('');
+    finactiveEl.innerHTML = `<span>⏸ Не актуально (поза воронкою)</span><b>${inactiveCount}</b>`;
   }
 
+  // Воронка-лійка: трапеції, що звужуються згори вниз (найбільша стадія
+  // зверху), замість горизонтальних барів — і без дублювання цифр, які
+  // вже видно в ministrip вище.
   function renderFunnel(){
     const all = visibleLeads().filter(matchesQuery);
     const stages = [
@@ -1264,19 +1270,26 @@
       {label:'Презентація', count: all.filter(l=>l.stage==='qualified').length, color:'var(--stage-qualified)'},
       {label:'Угоди', count: all.filter(l=>DEAL_STAGE_KEYS.includes(l.stage)).length, color:'var(--stage-investor)'},
     ];
-    const max = Math.max(1, ...stages.map(s=>s.count));
     const total = stages.reduce((s,x)=>s+x.count, 0) || 1;
-    funnelEl.innerHTML = stages.map(s => {
-      const widthPct = Math.round((s.count / max) * 100);
-      const share = Math.round((s.count / total) * 100);
-      return `
-        <div class="funnel-row">
-          <span class="funnel-label">${esc(s.label)}</span>
-          <div class="funnel-track"><div class="funnel-fill" style="width:${widthPct}%; background:${s.color};">${s.count || ''}</div></div>
-          <span class="funnel-pct">${s.count ? share + '%' : ''}</span>
+    const maxW = 100, minW = 46;
+    let html = '';
+    stages.forEach((s, i) => {
+      const widthPct = maxW - (maxW - minW) * (i / (stages.length - 1));
+      const pct = Math.round((s.count / total) * 100);
+      const radius = i === 0 ? '10px 10px 4px 4px' : (i === stages.length - 1 ? '4px 4px 10px 10px' : '4px');
+      html += `
+        <div class="fstage" style="width:${widthPct}%; background:${s.color}; border-radius:${radius};">
+          <span>${esc(s.label)}<span class="fcount">${s.count}</span></span>
+          <span class="fpct">${s.count ? pct + '%' : ''}</span>
         </div>
       `;
-    }).join('');
+      if(i < stages.length - 1){
+        const next = stages[i+1];
+        const dropPct = s.count ? Math.round((1 - next.count / s.count) * 100) : 0;
+        html += `<div class="fdrop">${s.count && next.count !== s.count ? '↓ ' + dropPct + '%' : '↓'}</div>`;
+      }
+    });
+    funnelEl.innerHTML = html;
   }
 
   function renderTasks(){
@@ -2052,13 +2065,10 @@
     renderStats(); renderFunnel(); renderBoard(); renderTasksView(); renderDealsView(); renderInactiveView();
   });
   document.addEventListener('keydown', (e)=>{
-    if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; navDrawer.hidden = true; scrim.hidden = true; }
+    if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
   });
 
-  const NAV_LABELS = {board:'Воронка', tasks:'Задачі', deals:'Угоди', inactive:'Не актуально', projects:'🏗 Проєкти', settings:'⚙️ Налаштування'};
-
   function switchTab(view){
-    statsEl.hidden = view !== 'board';
     boardView.hidden = view !== 'board';
     tasksView.hidden = view !== 'tasks';
     dealsView.hidden = view !== 'deals';
@@ -2071,8 +2081,6 @@
     tabInactiveBtn.classList.toggle('active', view === 'inactive');
     tabProjectsBtn.classList.toggle('active', view === 'projects');
     tabSettingsBtn.classList.toggle('active', view === 'settings');
-    document.getElementById('navMenuLabel').textContent = NAV_LABELS[view] || '';
-    navDrawer.hidden = true; scrim.hidden = true;
   }
   tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
   tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
@@ -2143,13 +2151,7 @@
     scriptsDrawer.hidden = true; scrim.hidden = true;
   });
   document.getElementById('scrim').addEventListener('click', ()=>{
-    closeDrawer(); scriptsDrawer.hidden = true; navDrawer.hidden = true; scrim.hidden = true;
-  });
-  document.getElementById('navMenuBtn').addEventListener('click', ()=>{
-    navDrawer.hidden = false; scrim.hidden = false;
-  });
-  document.getElementById('closeNavDrawer').addEventListener('click', ()=>{
-    navDrawer.hidden = true; scrim.hidden = true;
+    closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true;
   });
   document.getElementById('addScriptBtn').addEventListener('click', async ()=>{
     const title = document.getElementById('ns-title').value.trim();
