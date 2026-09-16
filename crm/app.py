@@ -75,8 +75,19 @@ def api_update_lead(lead_id):
 @app.route("/api/leads/<int:lead_id>", methods=["DELETE"])
 @require_admin
 def api_delete_lead(lead_id):
-    db.delete_lead(lead_id)
+    body = request.get_json(force=True, silent=True) or {}
+    reason = (body.get("reason") or "").strip()
+    db.delete_lead(lead_id, reason=reason)
     return "", 204
+
+
+@app.route("/api/leads/<int:lead_id>/restore", methods=["POST"])
+@require_admin
+def api_restore_lead(lead_id):
+    lead = db.restore_lead(lead_id)
+    if not lead:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(lead)
 
 
 # Кожен канал — окремий бот (окремий токен), тому надсилати можна

@@ -403,8 +403,13 @@
   .toast{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:30;
     background:var(--ink); color:var(--bg); padding:9px 18px; border-radius:999px; font-size:13px;
-    font-weight:600; box-shadow:var(--shadow);
+    font-weight:600; box-shadow:var(--shadow); display:flex; align-items:center; gap:10px; max-width:90vw;
   }
+  .toast-undo-btn{
+    border:1px solid var(--bg); background:transparent; color:var(--bg); font:inherit; font-weight:700;
+    padding:3px 10px; border-radius:999px; cursor:pointer; white-space:nowrap; flex:none;
+  }
+  .toast-undo-btn:hover{background:var(--bg); color:var(--ink);}
   [hidden]{display:none!important;}
 
   @media (max-width:640px){
@@ -859,6 +864,20 @@
     toastEl.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(()=>{ toastEl.hidden = true; }, 2200);
+  }
+
+  // Той самий toast, але з кнопкою "Скасувати" і довшим показом —
+  // для дій, які варто дати відкотити одним кліком (як видалення ліда).
+  function toastWithUndo(text, onUndo){
+    toastEl.innerHTML = `<span>${esc(text)}</span> <button type="button" id="toastUndoBtn" class="toast-undo-btn">Скасувати</button>`;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    document.getElementById('toastUndoBtn').addEventListener('click', async () => {
+      clearTimeout(toastTimer);
+      toastEl.hidden = true;
+      await onUndo();
+    });
+    toastTimer = setTimeout(()=>{ toastEl.hidden = true; }, 8000);
   }
 
   function digitsOnly(phone){
@@ -1809,14 +1828,29 @@
     }
   }
 
+  async function undoDeleteLead(leadId){
+    try{
+      await apiFetch(`/api/leads/${leadId}/restore`, {method:'POST'});
+      await leadsCol.refresh();
+      toast('Лід відновлено ✅');
+    }catch(e){ console.error(e); toast('Не вдалося відновити'); }
+  }
+
   async function deleteLead(){
     if(!editingId) return closeDrawer();
+    const lead = leads.find(l=>l.id===editingId);
+    const who = lead?.name || lead?.phone || 'без імені';
+    const reason = window.prompt(`Чому видаляєте ліда «${who}»? Причина обов'язкова — збережеться в нотатках.`);
+    if(!reason || !reason.trim()) return;
     if(!leadsCol){
       leads = leads.filter(l=>l.id!==editingId);
       render(); closeDrawer(); return;
     }
-    try{ await leadsCol.doc(editingId).delete(); }catch(e){ console.error(e); }
+    const deletedId = editingId;
+    try{ await leadsCol.doc(deletedId).delete(reason.trim()); }
+    catch(e){ console.error(e); toast('Не вдалося видалити'); return; }
     closeDrawer();
+    toastWithUndo(`Лід «${who}» видалено`, () => undoDeleteLead(deletedId));
   }
 
   async function setStage(id, newStage){
@@ -2106,7 +2140,7 @@
       doc(id){
         return {
           async update(data){ await apiFetch(`${basePath}/${id}`, {method:'PATCH', body: JSON.stringify(data)}); await refresh(); },
-          async delete(){ await apiFetch(`${basePath}/${id}`, {method:'DELETE'}); await refresh(); },
+          async delete(reason){ await apiFetch(`${basePath}/${id}`, {method:'DELETE', body: JSON.stringify({reason})}); await refresh(); },
         };
       },
       async add(data){ await apiFetch(basePath, {method:'POST', body: JSON.stringify(data)}); await refresh(); },

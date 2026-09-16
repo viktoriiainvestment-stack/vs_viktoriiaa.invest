@@ -27,6 +27,10 @@ FIELDS = [
     # Кваліфікація (6 питань) + лічильник спроб виходу на контакт
     "investGoal", "location", "readyToWait", "experience", "budget", "dealTerm",
     "contactAttempts", "lastContactAttemptAt",
+    # М'яке видалення — "Видалити" не стирає рядок, а ставить дату сюди,
+    # і list_leads() ховає такі ліди. Дані лишаються в базі й лишаються
+    # відновлюваними, поки хтось не вичистить таблицю вручну.
+    "deletedAt",
 ]
 
 
@@ -61,6 +65,7 @@ def init_db():
     for col in (
         "autoSendText", "tgUsername", "investGoal", "location", "readyToWait",
         "experience", "budget", "dealTerm", "contactAttempts", "lastContactAttemptAt",
+        "deletedAt",
     ):
         try:
             conn.execute(f"ALTER TABLE leads ADD COLUMN {_column_def(col)}")
@@ -94,7 +99,7 @@ def _now():
 
 def list_leads():
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM leads ORDER BY id").fetchall()
+    rows = conn.execute("SELECT * FROM leads WHERE deletedAt = '' ORDER BY id").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -151,11 +156,40 @@ def update_lead(lead_id, data):
     return get_lead(lead_id)
 
 
-def delete_lead(lead_id):
+def delete_lead(lead_id, reason=""):
+    """М'яко видаляє ліда: рядок лишається в базі з проставленим
+    deletedAt, list_leads() його більше не показує. Причина (якщо
+    задана) дописується в нотатки — щоб було видно, чому видалено,
+    навіть після відновлення."""
     conn = get_conn()
-    conn.execute("DELETE FROM leads WHERE id = ?", (lead_id,))
+    now = _now()
+    if reason:
+        row = conn.execute("SELECT notes FROM leads WHERE id = ?", (lead_id,)).fetchone()
+        notes = (row["notes"] if row else "") or ""
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        notes = (notes + f"\n[{stamp}] Видалено. Причина: {reason}").strip()
+        conn.execute(
+            "UPDATE leads SET deletedAt = ?, notes = ?, updatedAt = ? WHERE id = ?",
+            (now, notes, now, lead_id),
+        )
+    else:
+        conn.execute(
+            "UPDATE leads SET deletedAt = ?, updatedAt = ? WHERE id = ?",
+            (now, now, lead_id),
+        )
     conn.commit()
     conn.close()
+
+
+def restore_lead(lead_id):
+    conn = get_conn()
+    conn.execute(
+        "UPDATE leads SET deletedAt = '', updatedAt = ? WHERE id = ?",
+        (_now(), lead_id),
+    )
+    conn.commit()
+    conn.close()
+    return get_lead(lead_id)
 
 
 def leads_with_tasks_due(on_or_before):
