@@ -33,7 +33,7 @@ CRM_DIR = Path(__file__).parent
 _sessions = {}
 
 # Порядок кроків. Крок "country" не в QUESTIONS (див. quiz_data.py) —
-# вставляємо його вручну одразу після region, і тільки якщо треба.
+# вставляємо його вручну одразу після location, і тільки якщо треба.
 _BASE_STEPS = list(qd.QUESTIONS)
 
 
@@ -42,17 +42,18 @@ def _step_for(session):
     idx = session["step"]
     answers = session["answers"]
 
-    # Крок 0 — регіон (завжди перший, з qd.QUESTIONS[0]).
+    # Крок 0 — локація (завжди перший, з qd.QUESTIONS[0]).
     if idx == 0:
-        return qd.Q_REGION, False
+        return qd.Q_LOCATION, False
 
-    # Після регіону: якщо обрали "abroad" і країну ще не питали — питаємо.
-    if idx == 1 and answers.get("region") == "abroad" and "country" not in answers:
+    # Після локації: якщо обрали "abroad" і країну ще не питали — питаємо.
+    if idx == 1 and answers.get("location") == "abroad" and "country" not in answers:
         return qd.Q_COUNTRY, True
 
-    # Рахуємо, скільки "базових" питань (region, construction, format,
-    # timing) уже позаду, компенсуючи вставлений крок country.
-    base_idx = idx if not (answers.get("region") == "abroad") else idx - 1
+    # Рахуємо, скільки "базових" питань (location, construction, goal,
+    # experience, format, timing) уже позаду, компенсуючи вставлений
+    # крок country.
+    base_idx = idx if not (answers.get("location") == "abroad") else idx - 1
     if 0 <= base_idx < len(_BASE_STEPS):
         return _BASE_STEPS[base_idx], False
 
@@ -135,7 +136,7 @@ def _send_card_carousel(chat_id, session, cards):
 
 def _send_cards_and_ask_phone(chat_id, session):
     answers = session["answers"]
-    if answers.get("region") == "abroad":
+    if answers.get("location") == "abroad":
         bot.send_message(chat_id, qd.ABROAD_FALLBACK_TEXT)
     else:
         matched = [c for c in qd.UKRAINE_CARDS if qd.card_matches(c, answers)]
@@ -196,18 +197,12 @@ def _finalize_lead(chat_id, session, call_time_label, fallback_name=""):
 
 
 def _answers_summary(answers):
-    labels = {
-        "region": dict(qd.Q_REGION["options"]),
-        "country": dict(qd.Q_COUNTRY["options"]),
-        "construction": dict(qd.Q_CONSTRUCTION["options"]),
-        "format": dict(qd.Q_FORMAT["options"]),
-        "timing": dict(qd.Q_TIMING["options"]),
-    }
     # invert value->label per question so we can print human text
     lines = []
     for key, question in (
-        ("region", qd.Q_REGION), ("country", qd.Q_COUNTRY),
-        ("construction", qd.Q_CONSTRUCTION), ("format", qd.Q_FORMAT),
+        ("location", qd.Q_LOCATION), ("country", qd.Q_COUNTRY),
+        ("construction", qd.Q_CONSTRUCTION), ("goal", qd.Q_GOAL),
+        ("experience", qd.Q_EXPERIENCE), ("format", qd.Q_FORMAT),
         ("timing", qd.Q_TIMING),
     ):
         value = answers.get(key)
@@ -225,7 +220,7 @@ if bot:
         chat_id = message.chat.id
         _sessions[chat_id] = {"step": 0, "answers": {}}
         bot.send_message(chat_id, qd.INTRO_TEXT)
-        _send_question(chat_id, qd.Q_REGION)
+        _send_question(chat_id, qd.Q_LOCATION)
 
     @bot.message_handler(commands=["id"])
     def handle_id(message):
