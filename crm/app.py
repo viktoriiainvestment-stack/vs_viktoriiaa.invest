@@ -15,8 +15,6 @@ from notifications import notify_admin
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 LEAD_WEBHOOK_TOKEN = os.environ.get("LEAD_WEBHOOK_TOKEN")
-DIGEST_HOUR = int(os.environ.get("DIGEST_HOUR", "9"))
-ENABLE_DAILY_DIGEST = os.environ.get("ENABLE_DAILY_DIGEST", "false").lower() == "true"
 
 app = Flask(__name__)
 print(
@@ -154,6 +152,70 @@ def api_delete_script(script_id):
     return "", 204
 
 
+# ---- projects (catalog of what you offer leads) ----
+
+@app.route("/api/projects", methods=["GET"])
+@require_admin
+def api_list_projects():
+    return jsonify(db.list_projects())
+
+
+@app.route("/api/projects", methods=["POST"])
+@require_admin
+def api_create_project():
+    body = request.get_json(force=True) or {}
+    project = db.create_project(
+        body.get("title", "").strip(),
+        body.get("location", "").strip(),
+        body.get("budget", "").strip(),
+        body.get("link", "").strip(),
+        body.get("text", "").strip(),
+    )
+    return jsonify(project), 201
+
+
+@app.route("/api/projects/<int:project_id>", methods=["PATCH"])
+@require_admin
+def api_update_project(project_id):
+    body = request.get_json(force=True) or {}
+    project = db.update_project(
+        project_id,
+        body.get("title", "").strip(),
+        body.get("location", "").strip(),
+        body.get("budget", "").strip(),
+        body.get("link", "").strip(),
+        body.get("text", "").strip(),
+    )
+    if not project:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(project)
+
+
+@app.route("/api/projects/<int:project_id>", methods=["DELETE"])
+@require_admin
+def api_delete_project(project_id):
+    db.delete_project(project_id)
+    return "", 204
+
+
+# ---- settings (edited from the "⚙️ Налаштування" tab, no redeploy needed) ----
+#
+# Тільки практичні речі роботи СРМ (нагадування, дайджест). Секрети
+# (ADMIN_TOKEN, токени ботів) сюди навмисно не потрапляють — вони й
+# далі тільки у змінних середовища Railway.
+
+@app.route("/api/settings", methods=["GET"])
+@require_admin
+def api_get_settings():
+    return jsonify(db.get_settings())
+
+
+@app.route("/api/settings", methods=["PATCH"])
+@require_admin
+def api_update_settings():
+    return jsonify(db.update_settings(request.get_json(force=True) or {}))
+
+
 # ---- generic lead webhook (Zapier / Make / your Telegram quiz bot / anything) ----
 #
 # One universal way in for leads that don't come through the CRM's own
@@ -188,11 +250,19 @@ def webhook_lead():
 # ---- background workers ----
 
 def _digest_loop():
+    # Година й увімкнено/вимкнено читаються з db.get_settings() щоразу —
+    # тому зміна у вкладці «Налаштування» діє одразу, без редеплою.
     last_sent_date = None
     while True:
+        settings = db.get_settings()
+        enabled = settings.get("enableDailyDigest") == "true"
+        try:
+            digest_hour = int(settings.get("digestHour") or 9)
+        except ValueError:
+            digest_hour = 9
         now = datetime.now()
         today = now.strftime("%Y-%m-%d")
-        if now.hour == DIGEST_HOUR and last_sent_date != today:
+        if enabled and now.hour == digest_hour and last_sent_date != today:
             due = db.leads_with_tasks_due(today)
             if due:
                 lines = [f"— {l['name'] or l['phone']}: {l['nextAction']} ({l['nextActionAt']})" for l in due]
@@ -220,8 +290,7 @@ def _start_background_workers():
         threading.Thread(target=telegram_bot.start_polling, daemon=True).start()
     if quiz_bot.bot:
         threading.Thread(target=quiz_bot.start_polling, daemon=True).start()
-    if ENABLE_DAILY_DIGEST:
-        threading.Thread(target=_digest_loop, daemon=True).start()
+    threading.Thread(target=_digest_loop, daemon=True).start()
 
 
 _start_background_workers()

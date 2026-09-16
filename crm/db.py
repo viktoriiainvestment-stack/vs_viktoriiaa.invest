@@ -89,8 +89,63 @@ def init_db():
         conn.execute("ALTER TABLE scripts ADD COLUMN stage TEXT NOT NULL DEFAULT ''")
     except sqlite3.OperationalError:
         pass  # колонка вже є
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL DEFAULT ''
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            location TEXT NOT NULL DEFAULT '',
+            budget TEXT NOT NULL DEFAULT '',
+            link TEXT NOT NULL DEFAULT '',
+            text TEXT NOT NULL DEFAULT '',
+            createdAt TEXT NOT NULL,
+            updatedAt TEXT NOT NULL
+        )
+        """
+    )
     conn.commit()
     conn.close()
+
+
+# Налаштування, які можна міняти самій у вкладці «Налаштування» СРМ,
+# без редеплою — на відміну від секретів (ADMIN_TOKEN, токени ботів),
+# які й далі живуть тільки в змінних середовища Railway.
+DEFAULT_SETTINGS = {
+    "reengageMonths": "6",
+    "digestHour": "9",
+    "enableDailyDigest": "false",
+}
+
+
+def get_settings():
+    conn = get_conn()
+    rows = conn.execute("SELECT key, value FROM settings").fetchall()
+    conn.close()
+    settings = dict(DEFAULT_SETTINGS)
+    settings.update({r["key"]: r["value"] for r in rows})
+    return settings
+
+
+def update_settings(data):
+    conn = get_conn()
+    for key in DEFAULT_SETTINGS:
+        if key in data:
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES (?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                (key, str(data[key])),
+            )
+    conn.commit()
+    conn.close()
+    return get_settings()
 
 
 def _now():
@@ -240,5 +295,48 @@ def update_script(script_id, title, text, stage=""):
 def delete_script(script_id):
     conn = get_conn()
     conn.execute("DELETE FROM scripts WHERE id = ?", (script_id,))
+    conn.commit()
+    conn.close()
+
+
+def list_projects():
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM projects ORDER BY id").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def create_project(title, location="", budget="", link="", text=""):
+    conn = get_conn()
+    now = _now()
+    cur = conn.execute(
+        "INSERT INTO projects (title, location, budget, link, text, createdAt, updatedAt) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (title, location, budget, link, text, now, now),
+    )
+    conn.commit()
+    project_id = cur.lastrowid
+    conn.close()
+    return {
+        "id": project_id, "title": title, "location": location, "budget": budget,
+        "link": link, "text": text, "createdAt": now, "updatedAt": now,
+    }
+
+
+def update_project(project_id, title, location="", budget="", link="", text=""):
+    conn = get_conn()
+    conn.execute(
+        "UPDATE projects SET title = ?, location = ?, budget = ?, link = ?, text = ?, updatedAt = ? WHERE id = ?",
+        (title, location, budget, link, text, _now(), project_id),
+    )
+    conn.commit()
+    row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def delete_project(project_id):
+    conn = get_conn()
+    conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
     conn.commit()
     conn.close()

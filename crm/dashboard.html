@@ -291,11 +291,12 @@
   .stage-pill::after{content:'▾'; opacity:.85; font-size:9px; margin-left:2px;}
 
   #qualificationFields{display:flex; flex-direction:column; gap:2px;}
-  #qualificationFields.collapsed .efield{padding:4px 10px; margin:0 -10px;}
-  #qualificationFields.collapsed .efield-label{display:none;}
-  #qualificationFields.collapsed .efield-icon{width:16px; font-size:12px; line-height:20px;}
-  #qualificationFields.collapsed .efield-value{font-size:13px;}
-  #qualificationFields.collapsed .efield-pencil{width:20px; height:20px; font-size:11px;}
+
+  .section-toggle{cursor:pointer; user-select:none;}
+  .section-toggle .chevron{
+    display:inline-block; font-size:10px; transition:transform .15s ease; margin-right:1px;
+  }
+  .section-toggle.open .chevron{transform:rotate(90deg);}
 
   .attempts{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -435,6 +436,8 @@
         <button class="tab-btn" id="tabTasksBtn" type="button">Задачі</button>
         <button class="tab-btn" id="tabDealsBtn" type="button">Угоди</button>
         <button class="tab-btn" id="tabInactiveBtn" type="button">Не актуально</button>
+        <button class="tab-btn" id="tabProjectsBtn" type="button">🏗 Проєкти</button>
+        <button class="tab-btn" id="tabSettingsBtn" type="button">⚙️ Налаштування</button>
       </div>
       <div class="filters-row" title="Фільтр за місяцем, коли лід зайшов у CRM — діє на всі вкладки">
         <label for="entryMonthFilter">Місяць:</label>
@@ -484,9 +487,47 @@
 
   <div id="inactiveView" hidden>
     <div class="filters-row" style="margin-bottom:14px;">
-      <span class="muted">Ліди зі статусом «Не актуально». Раз на 6 місяців кожному автоматично ставиться нагадування зв'язатись знову — воно зʼявиться у «Задачах».</span>
+      <span class="muted" id="inactiveHint">Ліди зі статусом «Не актуально». Раз на 6 місяців кожному автоматично ставиться нагадування зв'язатись знову — воно зʼявиться у «Задачах».</span>
     </div>
     <div class="tasks-list" id="inactiveList"></div>
+  </div>
+
+  <div id="projectsView" hidden>
+    <div class="filters-row" style="margin-bottom:14px;">
+      <span class="muted">Каталог проєктів, які пропонуєте лідам — щоб швидко глянути деталі чи скопіювати посилання під час дзвінка.</span>
+    </div>
+    <div class="box" style="max-width:520px; margin-bottom:18px;">
+      <h3 id="projectFormTitle">Додати проєкт</h3>
+      <div class="field"><label for="pr-title">Назва</label><input id="pr-title" type="text" placeholder="Leleka by Odessa"></div>
+      <div class="field"><label for="pr-location">Локація</label><input id="pr-location" type="text" placeholder="Одеса"></div>
+      <div class="field"><label for="pr-budget">Бюджет / формат</label><input id="pr-budget" type="text" placeholder="$30-50k, студії"></div>
+      <div class="field"><label for="pr-link">Посилання (презентація, фото, калькулятор)</label><input id="pr-link" type="text" placeholder="https://…"></div>
+      <div class="field"><label for="pr-text">Опис</label><textarea id="pr-text" rows="4" placeholder="Деталі проєкту, переваги, терміни здачі…"></textarea></div>
+      <button type="button" class="btn primary small" id="addProjectBtn" style="align-self:flex-start;">Додати проєкт</button>
+    </div>
+    <div id="projectsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+
+  <div id="settingsView" hidden>
+    <div class="box" style="max-width:480px; gap:14px;">
+      <h3>⚙️ Налаштування СРМ</h3>
+      <div class="field">
+        <label for="st-reengage">Через скільки місяців нагадувати про лідів «Не актуально»</label>
+        <input id="st-reengage" type="number" min="1" max="24" step="1">
+      </div>
+      <div class="field">
+        <label for="st-digest-hour">Година щоденного дайджесту завдань (0–23)</label>
+        <input id="st-digest-hour" type="number" min="0" max="23" step="1">
+      </div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer;">
+        <input id="st-digest-enabled" type="checkbox" style="width:auto;">
+        Надсилати щоденний дайджест завдань у Telegram
+      </label>
+      <div class="quick-actions">
+        <button type="button" class="btn primary small" id="saveSettingsBtn">Зберегти</button>
+        <span class="muted" id="settingsSavedHint" style="font-size:12px;"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -557,7 +598,7 @@
       <textarea id="f-portrait" rows="3" placeholder="Робота, сім'я, хобі, як краще звертатись — щоб говорити як зі знайомою"></textarea>
     </div>
 
-    <div class="section-label">📞 Спроби виходу на контакт</div>
+    <div class="section-label section-toggle" id="attemptsLabel"><span class="chevron">▸</span> 📞 Спроби виходу на контакт</div>
     <div class="attempts" id="attemptsBox" hidden>
       <div class="attempts-info">
         <span class="attempts-count" id="attemptsCount"></span>
@@ -566,9 +607,9 @@
       <button type="button" class="btn primary small" id="logAttemptBtn">📞 Ще спроба сьогодні</button>
     </div>
 
-    <div class="section-label" id="qualificationLabel">🧭 Кваліфікація</div>
+    <div class="section-label section-toggle" id="qualificationLabel"><span class="chevron">▸</span> 🧭 Кваліфікація</div>
 
-    <div id="qualificationFields">
+    <div id="qualificationFields" hidden>
     <div class="efield" id="efGoal">
       <div class="efield-icon">🎯</div>
       <div class="efield-body">
@@ -780,7 +821,6 @@
   // «Не актуально» — поза лійкою: не бере участі у степері/drag&drop,
   // ставиться тільки вручну через картку ліда.
   const INACTIVE_STAGE = {key:'inactive', label:'Не актуально', color:'var(--ink-faint)'};
-  const REENGAGE_MONTHS = 6;
   const stageIndex = k => ALL_STAGES.findIndex(s=>s.key===k);
   const stageLabel = k => ALL_STAGES.find(s=>s.key===k)?.label || (k===INACTIVE_STAGE.key ? INACTIVE_STAGE.label : k);
   const scriptStageLabel = k => k ? stageLabel(k) : 'Будь-яка стадія';
@@ -803,6 +843,8 @@
   const tasksView = document.getElementById('tasksView');
   const dealsView = document.getElementById('dealsView');
   const inactiveView = document.getElementById('inactiveView');
+  const projectsView = document.getElementById('projectsView');
+  const settingsView = document.getElementById('settingsView');
   const tasksListEl = document.getElementById('tasksList');
   const broadcastListEl = document.getElementById('broadcastList');
   const dealsListEl = document.getElementById('dealsList');
@@ -813,13 +855,17 @@
   const tabTasksBtn = document.getElementById('tabTasksBtn');
   const tabDealsBtn = document.getElementById('tabDealsBtn');
   const tabInactiveBtn = document.getElementById('tabInactiveBtn');
+  const tabProjectsBtn = document.getElementById('tabProjectsBtn');
+  const tabSettingsBtn = document.getElementById('tabSettingsBtn');
   const entryMonthFilterEl = document.getElementById('entryMonthFilter');
   const funnelEl = document.getElementById('funnelChart');
 
   let leads = [];
   let scripts = [];
+  let projects = [];
   let leadsCol = null;
   let scriptsCol = null;
+  let projectsCol = null;
   let editingId = null;
   let query = '';
   let toastTimer = null;
@@ -1073,7 +1119,8 @@
       refreshStageView();
       const ctx = currentStageContext();
       refreshAttemptsBox(ctx);
-      refreshQualificationSection(ctx);
+      attemptsAccordion.setOpen(ctx.stage === 'cold');
+      qualificationAccordion.setOpen(ctx.stage === 'qualification');
     }
     row.addEventListener('click', () => { if(select.hidden) startEdit(); });
     select.addEventListener('change', stopEdit);
@@ -1081,33 +1128,28 @@
     refreshStageView();
   }
 
-  function refreshAttemptsBox(lead){
-    const box = document.getElementById('attemptsBox');
-    if(!lead || lead.stage !== 'cold'){ box.hidden = true; return; }
-    box.hidden = false;
-    const n = Number(lead.contactAttempts) || 0;
-    document.getElementById('attemptsCount').textContent = `Спроб: ${n}`;
-    document.getElementById('attemptsLast').textContent = lead.lastContactAttemptAt
-      ? `Востаннє: ${lead.lastContactAttemptAt}`
-      : 'Ще не було спроб';
+  // «Спроби» і «Кваліфікація» видно завжди (не залежно від стадії) —
+  // просто розгортаються/згортаються трикутником. За замовчуванням
+  // відкриті там, де найпотрібніші: спроби — поки лід «новий», а
+  // кваліфікація — коли стадія саме «Кваліфікація». Клік по заголовку
+  // завжди можна розгорнути вручну, незалежно від стадії.
+  function bindAccordion(labelId, bodyId){
+    const label = document.getElementById(labelId);
+    const body = document.getElementById(bodyId);
+    function setOpen(open){
+      body.hidden = !open;
+      label.classList.toggle('open', open);
+    }
+    label.addEventListener('click', () => setOpen(body.hidden));
+    return {setOpen};
   }
 
-  // Кваліфікація змінює вигляд залежно від стадії: у «нових» лідах її
-  // взагалі не видно (нема чого показувати), у «кваліфікації» — повна
-  // форма з підписами, далі (якісний лід і пізніше) — та сама секція,
-  // просто згорнута у щільний список (відповіді вже заповнені).
-  function refreshQualificationSection(lead){
-    const label = document.getElementById('qualificationLabel');
-    const fields = document.getElementById('qualificationFields');
-    const stage = lead?.stage || 'cold';
-    if(stage === 'cold'){
-      label.hidden = true;
-      fields.hidden = true;
-      return;
-    }
-    label.hidden = false;
-    fields.hidden = false;
-    fields.classList.toggle('collapsed', stage !== 'qualification');
+  function refreshAttemptsBox(lead){
+    const n = Number(lead?.contactAttempts) || 0;
+    document.getElementById('attemptsCount').textContent = `Спроб: ${n}`;
+    document.getElementById('attemptsLast').textContent = lead?.lastContactAttemptAt
+      ? `Востаннє: ${lead.lastContactAttemptAt}`
+      : 'Ще не було спроб';
   }
 
   // Якщо стадію міняють просто в картці (не закриваючи її) — блоки
@@ -1412,11 +1454,11 @@
     const l = leads.find(x=>x.id===id);
     if(!l) return;
     const updates = {
-      nextActionAt: addMonths(l.nextActionAt, REENGAGE_MONTHS),
+      nextActionAt: addMonths(l.nextActionAt, crmSettings.reengageMonths),
       nextAction: l.nextAction || 'Розсилка: перевірити, чи стало актуально',
     };
     if(!leadsCol){ Object.assign(l, updates); render(); return; }
-    try{ await leadsCol.doc(id).update(updates); toast('Перенесено на +6 міс'); }
+    try{ await leadsCol.doc(id).update(updates); toast(`Перенесено на +${crmSettings.reengageMonths} міс`); }
     catch(e){ console.error(e); }
   }
 
@@ -1669,6 +1711,7 @@
     sourceField.refreshView();
     document.getElementById('f-portrait').value = lead?.portrait || '';
     refreshAttemptsBox(lead);
+    attemptsAccordion.setOpen((lead?.stage || 'cold') === 'cold');
     document.getElementById('f-invest-goal').value = lead?.investGoal || '';
     goalField.refreshView();
     document.getElementById('f-location').value = lead?.location || '';
@@ -1683,7 +1726,7 @@
     dealTermField.refreshView();
     document.getElementById('f-offer').value = lead?.offer || '';
     offerField.refreshView();
-    refreshQualificationSection(lead);
+    qualificationAccordion.setOpen((lead?.stage || 'cold') === 'qualification');
     document.getElementById('f-prev').value = lead?.prevContact || '';
     document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
     document.getElementById('f-decision').value = lead?.decision || '';
@@ -1782,7 +1825,7 @@
     const prevLead = editingId ? leads.find(l=>l.id===editingId) : null;
     const enteringInactive = data.stage === 'inactive' && (!prevLead || prevLead.stage !== 'inactive');
     if(enteringInactive && !data.nextActionAt){
-      data.nextActionAt = addMonths(null, REENGAGE_MONTHS);
+      data.nextActionAt = addMonths(null, crmSettings.reengageMonths);
       data.nextAction = data.nextAction || 'Розсилка: перевірити, чи стало актуально';
     }
     if(!leadsCol){
@@ -1973,6 +2016,8 @@
   const dealTermField = bindEditableField('efDealTerm', 'f-deal-term-view', 'f-deal-term', {emptyText: 'Не вказано'});
   const offerField = bindEditableField('efOffer', 'f-offer-view', 'f-offer', {emptyText: 'Не вказано'});
   bindStageField();
+  const attemptsAccordion = bindAccordion('attemptsLabel', 'attemptsBox');
+  const qualificationAccordion = bindAccordion('qualificationLabel', 'qualificationFields');
   document.getElementById('logAttemptBtn').addEventListener('click', logContactAttempt);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
@@ -1997,15 +2042,21 @@
     tasksView.hidden = view !== 'tasks';
     dealsView.hidden = view !== 'deals';
     inactiveView.hidden = view !== 'inactive';
+    projectsView.hidden = view !== 'projects';
+    settingsView.hidden = view !== 'settings';
     tabBoardBtn.classList.toggle('active', view === 'board');
     tabTasksBtn.classList.toggle('active', view === 'tasks');
     tabDealsBtn.classList.toggle('active', view === 'deals');
     tabInactiveBtn.classList.toggle('active', view === 'inactive');
+    tabProjectsBtn.classList.toggle('active', view === 'projects');
+    tabSettingsBtn.classList.toggle('active', view === 'settings');
   }
   tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
   tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
   tabDealsBtn.addEventListener('click', ()=>switchTab('deals'));
   tabInactiveBtn.addEventListener('click', ()=>switchTab('inactive'));
+  tabProjectsBtn.addEventListener('click', ()=>switchTab('projects'));
+  tabSettingsBtn.addEventListener('click', ()=>switchTab('settings'));
   taskMonthFilterEl.addEventListener('change', renderTasksView);
   dealMonthFilterEl.addEventListener('change', renderDealsView);
   entryMonthFilterEl.addEventListener('change', ()=>{
@@ -2116,6 +2167,127 @@
     }
   });
 
+  // ---- projects panel (каталог того, що пропонуєте лідам) ----
+  let editingProjectId = null;
+
+  function resetProjectForm(){
+    editingProjectId = null;
+    document.getElementById('pr-title').value = '';
+    document.getElementById('pr-location').value = '';
+    document.getElementById('pr-budget').value = '';
+    document.getElementById('pr-link').value = '';
+    document.getElementById('pr-text').value = '';
+    document.getElementById('projectFormTitle').textContent = 'Додати проєкт';
+    document.getElementById('addProjectBtn').textContent = 'Додати проєкт';
+  }
+
+  function renderProjectsList(){
+    document.getElementById('projectsList').innerHTML = projects.map(p => `
+      <div class="script-item" data-id="${esc(p.id)}">
+        <div class="title">${esc(p.title)}${p.location ? ' · ' + esc(p.location) : ''}</div>
+        ${p.budget ? `<div class="muted" style="font-size:12px;">${esc(p.budget)}</div>` : ''}
+        ${p.text ? `<div class="text">${esc(p.text)}</div>` : ''}
+        ${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" style="font-size:12.5px;">🔗 Посилання</a>` : ''}
+        <div class="row">
+          <button class="btn small" data-copy-project="${esc(p.id)}">Копіювати опис</button>
+          <button class="btn small" data-edit-project="${esc(p.id)}">Редагувати</button>
+          <button class="btn small danger" data-del-project="${esc(p.id)}">Видалити</button>
+        </div>
+      </div>
+    `).join('') || '<div class="column-empty">Ще немає проєктів — додайте перший вище</div>';
+  }
+
+  document.getElementById('addProjectBtn').addEventListener('click', async ()=>{
+    const title = document.getElementById('pr-title').value.trim();
+    const location = document.getElementById('pr-location').value.trim();
+    const budget = document.getElementById('pr-budget').value.trim();
+    const link = document.getElementById('pr-link').value.trim();
+    const text = document.getElementById('pr-text').value.trim();
+    if(!title) return;
+    const id = editingProjectId;
+    resetProjectForm();
+    if(!projectsCol){
+      if(id){ const p = projects.find(p=>String(p.id)===String(id)); if(p){ Object.assign(p, {title, location, budget, link, text}); } }
+      else projects.push({id:'local-'+Date.now(), title, location, budget, link, text});
+      renderProjectsList();
+      return;
+    }
+    try{
+      if(id) await projectsCol.doc(id).update({title, location, budget, link, text});
+      else await projectsCol.add({title, location, budget, link, text, createdAt: Date.now()});
+    }
+    catch(e){ console.error(e); }
+  });
+  document.getElementById('projectsList').addEventListener('click', async (e)=>{
+    const copyId = e.target.closest('[data-copy-project]')?.dataset.copyProject;
+    const delId = e.target.closest('[data-del-project]')?.dataset.delProject;
+    const editId = e.target.closest('[data-edit-project]')?.dataset.editProject;
+    if(copyId){
+      const p = projects.find(p=>String(p.id)===copyId);
+      if(p) copyText(p.text || p.title);
+      return;
+    }
+    if(delId){
+      if(!projectsCol){ projects = projects.filter(p=>String(p.id)!==delId); renderProjectsList(); return; }
+      try{ await projectsCol.doc(delId).delete(); }catch(e){ console.error(e); }
+      return;
+    }
+    if(editId){
+      const p = projects.find(p=>String(p.id)===editId);
+      if(!p) return;
+      editingProjectId = p.id;
+      document.getElementById('pr-title').value = p.title;
+      document.getElementById('pr-location').value = p.location || '';
+      document.getElementById('pr-budget').value = p.budget || '';
+      document.getElementById('pr-link').value = p.link || '';
+      document.getElementById('pr-text').value = p.text || '';
+      document.getElementById('projectFormTitle').textContent = 'Редагувати проєкт';
+      document.getElementById('addProjectBtn').textContent = 'Зберегти зміни';
+      document.getElementById('pr-title').focus();
+    }
+  });
+
+  // ---- налаштування ----
+  let crmSettings = {reengageMonths: 6, digestHour: 9, enableDailyDigest: false};
+
+  async function loadSettings(){
+    try{
+      const s = await apiFetch('/api/settings');
+      crmSettings = {
+        reengageMonths: Number(s.reengageMonths) || 6,
+        digestHour: Number(s.digestHour) || 9,
+        enableDailyDigest: s.enableDailyDigest === 'true',
+      };
+    }catch(e){ console.error(e); }
+    document.getElementById('st-reengage').value = crmSettings.reengageMonths;
+    document.getElementById('st-digest-hour').value = crmSettings.digestHour;
+    document.getElementById('st-digest-enabled').checked = crmSettings.enableDailyDigest;
+    document.getElementById('inactiveHint').textContent =
+      `Ліди зі статусом «Не актуально». Раз на ${crmSettings.reengageMonths} міс. кожному автоматично ставиться нагадування зв'язатись знову — воно зʼявиться у «Задачах».`;
+  }
+
+  async function saveSettings(){
+    const data = {
+      reengageMonths: String(Number(document.getElementById('st-reengage').value) || 6),
+      digestHour: String(Number(document.getElementById('st-digest-hour').value) || 9),
+      enableDailyDigest: document.getElementById('st-digest-enabled').checked ? 'true' : 'false',
+    };
+    try{
+      await apiFetch('/api/settings', {method:'PATCH', body: JSON.stringify(data)});
+      crmSettings = {
+        reengageMonths: Number(data.reengageMonths),
+        digestHour: Number(data.digestHour),
+        enableDailyDigest: data.enableDailyDigest === 'true',
+      };
+      document.getElementById('inactiveHint').textContent =
+        `Ліди зі статусом «Не актуально». Раз на ${crmSettings.reengageMonths} міс. кожному автоматично ставиться нагадування зв'язатись знову — воно зʼявиться у «Задачах».`;
+      const hint = document.getElementById('settingsSavedHint');
+      hint.textContent = 'Збережено ✅';
+      setTimeout(()=>{ hint.textContent = ''; }, 2500);
+    }catch(e){ console.error(e); toast('Не вдалося зберегти налаштування'); }
+  }
+  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+
   render();
 
   function makeRestCollection(basePath){
@@ -2153,6 +2325,8 @@
     if(!token){ promptLogin(); if(!token) return; }
     leadsCol = makeRestCollection('/api/leads');
     scriptsCol = makeRestCollection('/api/scripts');
+    projectsCol = makeRestCollection('/api/projects');
+    loadSettings();
     const deepLinkId = Number(new URLSearchParams(location.search).get('lead'));
     let deepLinkHandled = false;
     leadsCol.onSnapshot(
@@ -2176,6 +2350,13 @@
       (snap) => {
         scripts = snap.docs.map(d => ({id:d.id, ...d.data()}));
         renderScriptsList();
+      },
+      (err) => { if(err.message !== 'unauthorized') console.error(err); }
+    );
+    projectsCol.onSnapshot(
+      (snap) => {
+        projects = snap.docs.map(d => ({id:d.id, ...d.data()}));
+        renderProjectsList();
       },
       (err) => { if(err.message !== 'unauthorized') console.error(err); }
     );
