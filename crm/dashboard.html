@@ -752,7 +752,7 @@
     <div class="field">
       <label for="ns-text">Текст</label>
       <textarea id="ns-text" rows="4" placeholder="Готовий текст повідомлення…"></textarea>
-      <span class="muted" style="font-size:11.5px;">Теги, які підставляться з картки ліда: {{імя}} {{проєкт}} {{бюджет}} {{локація}} {{термін}} {{мета}} — якщо поле в ліда порожнє, замість тегу підсвітиться червоним, що треба дописати вручну.</span>
+      <span class="muted" style="font-size:11.5px;">Теги, які підставляться з картки ліда: {{імя}} {{проєкт}} {{бюджет}} {{локація}} {{термін}} {{мета}} {{пропозиція}} — якщо поле в ліда порожнє, замість тегу підсвітиться червоним, що треба дописати вручну.</span>
     </div>
     <button class="btn primary small" id="addScriptBtn" style="align-self:flex-start;">Додати скрипт</button>
     <div id="scriptsList" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;"></div>
@@ -1481,6 +1481,7 @@
     {tag: 'локація', field: 'location', label: 'Локація'},
     {tag: 'термін', field: 'dealTerm', label: 'Термін угоди'},
     {tag: 'мета', field: 'investGoal', label: 'Мета інвестування'},
+    {tag: 'пропозиція', field: 'proposal', label: 'Пропозиція'},
   ];
 
   function renderScriptTemplate(template, lead){
