@@ -150,6 +150,34 @@ def _send_cards_and_ask_phone(chat_id, session):
     bot.send_message(chat_id, qd.ASK_PHONE_TEXT, reply_markup=_contact_keyboard())
 
 
+# Відповіді квізу -> значення полів кваліфікації в СРМ (той самий
+# набір опцій, що й у випадаючих списках dashboard.html) — щоб картка
+# ліда, який прийшов через квіз, одразу мала заповнену кваліфікацію,
+# а не тільки текстовий підсумок у нотатках.
+_LOCATION_TO_CRM = {
+    "odesa": "Одеса", "vinnytsia": "Вінниця", "lviv": "Львів",
+    "any": "Байдуже", "abroad": "За кордоном",
+}
+_READY_TO_WAIT_TO_CRM = {
+    "off_plan": "Так, готовий(а) чекати",
+    "ready": "Ні, треба готове",
+}
+_GOAL_TO_CRM = {
+    "passive": "Пасивний дохід",
+    "capitalization": "Капіталізація",
+    "both": "І те, і те",
+    "undecided": "Ще не визначились",
+}
+_EXPERIENCE_TO_CRM = {
+    "experienced": "Був досвід",
+    "first_time": "Вперше",
+}
+
+
+def _label_for(question, value):
+    return next((lbl for lbl, val in question["options"] if val == value), "")
+
+
 def _next_action_for(timing):
     """(nextActionAt, nextAction) для дашборду CRM за відповіддю на Q_TIMING.
 
@@ -187,6 +215,12 @@ def _finalize_lead(chat_id, session, call_time_label, fallback_name=""):
         "channel": "quiz_bot",
         "externalId": str(chat_id),
         "offer": session.get("shown_offer", ""),
+        "location": _LOCATION_TO_CRM.get(answers.get("location"), ""),
+        "readyToWait": _READY_TO_WAIT_TO_CRM.get(answers.get("construction"), ""),
+        "investGoal": _GOAL_TO_CRM.get(answers.get("goal"), ""),
+        "experience": _EXPERIENCE_TO_CRM.get(answers.get("experience"), ""),
+        "budget": _label_for(qd.Q_FORMAT, answers.get("format")),
+        "dealTerm": _label_for(qd.Q_TIMING, answers.get("timing")),
         "notes": notes,
         "nextAction": next_action,
         "nextActionAt": next_action_at,
