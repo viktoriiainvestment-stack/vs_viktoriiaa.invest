@@ -371,6 +371,14 @@
   }
   .tab-btn.active{background:var(--accent); color:var(--accent-ink);}
 
+  .nav-menu-btn{display:flex; align-items:center; gap:8px; font-size:14px;}
+  .nav-list{display:flex; flex-direction:column; gap:6px; padding-top:4px;}
+  .nav-item{
+    width:100%; text-align:left; border-radius:12px; padding:11px 14px; font-size:14.5px;
+    background:var(--surface-soft);
+  }
+  .nav-item.active{background:var(--accent); color:var(--accent-ink);}
+
   .filters-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
   .filters-row label{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
   .filters-row select{
@@ -431,14 +439,7 @@
       <p>Воронка лідів · інвестиційна нерухомість</p>
     </div>
     <div class="topbar-actions">
-      <div class="tabs">
-        <button class="tab-btn active" id="tabBoardBtn" type="button">Воронка</button>
-        <button class="tab-btn" id="tabTasksBtn" type="button">Задачі</button>
-        <button class="tab-btn" id="tabDealsBtn" type="button">Угоди</button>
-        <button class="tab-btn" id="tabInactiveBtn" type="button">Не актуально</button>
-        <button class="tab-btn" id="tabProjectsBtn" type="button">🏗 Проєкти</button>
-        <button class="tab-btn" id="tabSettingsBtn" type="button">⚙️ Налаштування</button>
-      </div>
+      <button class="btn nav-menu-btn" id="navMenuBtn" aria-label="Меню розділів">☰ <span id="navMenuLabel">Воронка</span></button>
       <div class="filters-row" title="Фільтр за місяцем, коли лід зайшов у CRM — діє на всі вкладки">
         <label for="entryMonthFilter">Місяць:</label>
         <select id="entryMonthFilter"><option value="">Усі місяці</option></select>
@@ -559,7 +560,7 @@
         <select id="f-stage" class="efield-select" aria-label="Стадія" hidden>
           <option value="cold">Нові ліди</option>
           <option value="qualification">Кваліфікація</option>
-          <option value="qualified">Якісний лід</option>
+          <option value="qualified">Презентація</option>
           <option value="investor">Інвестор · Оффер</option>
           <option value="client">Клієнт</option>
           <option value="inactive">Не актуально</option>
@@ -782,6 +783,21 @@
   </div>
 </aside>
 
+<aside class="drawer nav-drawer" id="navDrawer" hidden>
+  <div class="drawer-head">
+    <h2>Розділи</h2>
+    <button class="close-x" id="closeNavDrawer" aria-label="Закрити">✕</button>
+  </div>
+  <div class="drawer-body nav-list">
+    <button class="tab-btn nav-item active" id="tabBoardBtn" type="button">Воронка</button>
+    <button class="tab-btn nav-item" id="tabTasksBtn" type="button">Задачі</button>
+    <button class="tab-btn nav-item" id="tabDealsBtn" type="button">Угоди</button>
+    <button class="tab-btn nav-item" id="tabInactiveBtn" type="button">Не актуально</button>
+    <button class="tab-btn nav-item" id="tabProjectsBtn" type="button">🏗 Проєкти</button>
+    <button class="tab-btn nav-item" id="tabSettingsBtn" type="button">⚙️ Налаштування</button>
+  </div>
+</aside>
+
 <aside class="drawer" id="scriptsDrawer" hidden>
   <div class="drawer-head">
     <h2>Скрипти повідомлень</h2>
@@ -809,7 +825,7 @@
   const ALL_STAGES = [
     {key:'cold', label:'Нові ліди', color:'var(--stage-cold)'},
     {key:'qualification', label:'Кваліфікація', color:'var(--stage-qualification)'},
-    {key:'qualified', label:'Якісний лід', color:'var(--stage-qualified)'},
+    {key:'qualified', label:'Презентація', color:'var(--stage-qualified)'},
     {key:'investor', label:'Інвестор · Оффер', color:'var(--stage-investor)'},
     {key:'client', label:'Клієнт', color:'var(--stage-client)'},
   ];
@@ -837,6 +853,7 @@
   const taskList = document.getElementById('taskList');
   const drawer = document.getElementById('drawer');
   const scriptsDrawer = document.getElementById('scriptsDrawer');
+  const navDrawer = document.getElementById('navDrawer');
   const scrim = document.getElementById('scrim');
   const toastEl = document.getElementById('toast');
   const boardView = document.getElementById('boardView');
@@ -1243,7 +1260,7 @@
     const stages = [
       {label:'Нові ліди', count: all.filter(l=>l.stage==='cold').length, color:'var(--stage-cold)'},
       {label:'Кваліфікація', count: all.filter(l=>l.stage==='qualification').length, color:'var(--stage-qualification)'},
-      {label:'Якісний лід', count: all.filter(l=>l.stage==='qualified').length, color:'var(--stage-qualified)'},
+      {label:'Презентація', count: all.filter(l=>l.stage==='qualified').length, color:'var(--stage-qualified)'},
       {label:'Угоди', count: all.filter(l=>DEAL_STAGE_KEYS.includes(l.stage)).length, color:'var(--stage-investor)'},
     ];
     const max = Math.max(1, ...stages.map(s=>s.count));
@@ -2034,8 +2051,10 @@
     renderStats(); renderFunnel(); renderBoard(); renderTasksView(); renderDealsView(); renderInactiveView();
   });
   document.addEventListener('keydown', (e)=>{
-    if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true; }
+    if(e.key==='Escape'){ closeDrawer(); scriptsDrawer.hidden = true; navDrawer.hidden = true; scrim.hidden = true; }
   });
+
+  const NAV_LABELS = {board:'Воронка', tasks:'Задачі', deals:'Угоди', inactive:'Не актуально', projects:'🏗 Проєкти', settings:'⚙️ Налаштування'};
 
   function switchTab(view){
     boardView.hidden = view !== 'board';
@@ -2050,6 +2069,8 @@
     tabInactiveBtn.classList.toggle('active', view === 'inactive');
     tabProjectsBtn.classList.toggle('active', view === 'projects');
     tabSettingsBtn.classList.toggle('active', view === 'settings');
+    document.getElementById('navMenuLabel').textContent = NAV_LABELS[view] || '';
+    navDrawer.hidden = true; scrim.hidden = true;
   }
   tabBoardBtn.addEventListener('click', ()=>switchTab('board'));
   tabTasksBtn.addEventListener('click', ()=>switchTab('tasks'));
@@ -2120,7 +2141,13 @@
     scriptsDrawer.hidden = true; scrim.hidden = true;
   });
   document.getElementById('scrim').addEventListener('click', ()=>{
-    closeDrawer(); scriptsDrawer.hidden = true; scrim.hidden = true;
+    closeDrawer(); scriptsDrawer.hidden = true; navDrawer.hidden = true; scrim.hidden = true;
+  });
+  document.getElementById('navMenuBtn').addEventListener('click', ()=>{
+    navDrawer.hidden = false; scrim.hidden = false;
+  });
+  document.getElementById('closeNavDrawer').addEventListener('click', ()=>{
+    navDrawer.hidden = true; scrim.hidden = true;
   });
   document.getElementById('addScriptBtn').addEventListener('click', async ()=>{
     const title = document.getElementById('ns-title').value.trim();
