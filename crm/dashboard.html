@@ -271,6 +271,19 @@
   }
   .efield-input.efield-input-name{font-family:'Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:700;}
   .efield-hint{font-size:11.5px; color:var(--ink-faint); margin-top:5px;}
+  .efield-select{
+    width:100%; border:1px solid var(--accent); border-radius:8px; background:var(--surface);
+    color:var(--ink); font:inherit; font-size:15px; padding:6px 8px; outline:none;
+  }
+
+  .attempts{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surface-soft); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; flex-wrap:wrap;
+  }
+  .attempts-info{display:flex; flex-direction:column; gap:2px;}
+  .attempts-count{font-weight:700; font-size:14px;}
+  .attempts-last{font-size:12px; color:var(--ink-soft);}
 
   .dup-warning{
     font-size:12.5px; font-weight:600; color:var(--danger); background:color-mix(in srgb, var(--danger) 12%, transparent);
@@ -378,7 +391,7 @@
     .field-row{grid-template-columns:1fr;}
     /* iOS Safari авто-зумить сторінку при фокусі на полі з font-size < 16px
        і сам назад не зменшує — тому на мобільному піднімаємо до 16px. */
-    .field input, .field select, .field textarea, .search input, .efield-input{font-size:16px;}
+    .field input, .field select, .field textarea, .search input, .efield-input, .efield-select{font-size:16px;}
   }
 </style>
 </head>
@@ -511,6 +524,98 @@
         </select>
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
+    </div>
+
+    <div class="section-label">📞 Спроби виходу на контакт</div>
+    <div class="attempts" id="attemptsBox" hidden>
+      <div class="attempts-info">
+        <span class="attempts-count" id="attemptsCount"></span>
+        <span class="attempts-last" id="attemptsLast"></span>
+      </div>
+      <button type="button" class="btn primary small" id="logAttemptBtn">📞 Ще спроба сьогодні</button>
+    </div>
+
+    <div class="section-label">🧭 Кваліфікація</div>
+
+    <div class="efield" id="efGoal">
+      <div class="efield-icon">🎯</div>
+      <div class="efield-body">
+        <div class="efield-label">Мета інвестування</div>
+        <div class="efield-value" id="f-invest-goal-view"></div>
+        <select id="f-invest-goal" class="efield-select" aria-label="Мета інвестування" hidden>
+          <option value="">— оберіть —</option>
+          <option value="Пасивний дохід">Пасивний дохід</option>
+          <option value="Капіталізація">Капіталізація</option>
+          <option value="І те, і те">І те, і те</option>
+        </select>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+
+    <div class="efield" id="efLocation">
+      <div class="efield-icon">📍</div>
+      <div class="efield-body">
+        <div class="efield-label">Локація</div>
+        <div class="efield-value" id="f-location-view"></div>
+        <select id="f-location" class="efield-select" aria-label="Локація" hidden>
+          <option value="">— оберіть —</option>
+          <option value="Одеса">Одеса</option>
+          <option value="Вінниця">Вінниця</option>
+          <option value="Львів">Львів</option>
+          <option value="Байдуже">Байдуже</option>
+          <option value="За кордоном">За кордоном</option>
+        </select>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+
+    <div class="efield" id="efReadyToWait">
+      <div class="efield-icon">🏗️</div>
+      <div class="efield-body">
+        <div class="efield-label">Готовність чекати будівництво</div>
+        <div class="efield-value" id="f-ready-to-wait-view"></div>
+        <select id="f-ready-to-wait" class="efield-select" aria-label="Готовність чекати будівництво" hidden>
+          <option value="">— оберіть —</option>
+          <option value="Так, готовий(а) чекати">Так, готовий(а) чекати</option>
+          <option value="Ні, треба готове">Ні, треба готове</option>
+          <option value="Ще не визначились">Ще не визначились</option>
+        </select>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+
+    <div class="efield" id="efExperience">
+      <div class="efield-icon">🧳</div>
+      <div class="efield-body">
+        <div class="efield-label">Досвід</div>
+        <div class="efield-value" id="f-experience-view"></div>
+        <select id="f-experience" class="efield-select" aria-label="Досвід" hidden>
+          <option value="">— оберіть —</option>
+          <option value="Був досвід">Був досвід</option>
+          <option value="Вперше">Вперше</option>
+        </select>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+
+    <div class="efield" id="efBudget">
+      <div class="efield-icon">💰</div>
+      <div class="efield-body">
+        <div class="efield-label">Бюджет / формат</div>
+        <div class="efield-value" id="f-budget-view"></div>
+        <input id="f-budget" type="text" class="efield-input" placeholder="наприклад: $30-50k, студія" aria-label="Бюджет / формат" hidden>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+
+    <div class="efield" id="efDealTerm">
+      <div class="efield-icon">⏳</div>
+      <div class="efield-body">
+        <div class="efield-label">Термін угоди</div>
+        <div class="efield-value" id="f-deal-term-view"></div>
+        <input id="f-deal-term" type="text" class="efield-input" placeholder="наприклад: протягом місяця" aria-label="Термін угоди" hidden>
+      </div>
+      <div class="efield-pencil">✎</div>
     </div>
     </div>
 
@@ -850,6 +955,63 @@
       if(e.key === 'Escape'){ e.preventDefault(); stopEdit(false); }
     });
     refreshContactView();
+  }
+
+  // Той самий клік-щоб-редагувати, але для <select> (кваліфікаційні поля
+  // зі списком варіантів замість вільного тексту).
+  function bindEditableSelectField(rowId, viewId, selectId, opts){
+    opts = opts || {};
+    const row = document.getElementById(rowId);
+    const view = document.getElementById(viewId);
+    const select = document.getElementById(selectId);
+
+    function refreshView(){
+      const val = select.value;
+      if(!val){ view.textContent = opts.emptyText || 'Не вказано'; view.classList.add('empty'); }
+      else { view.textContent = val; view.classList.remove('empty'); }
+    }
+    function startEdit(){
+      row.classList.add('editing');
+      view.hidden = true;
+      select.hidden = false;
+      select.focus();
+    }
+    function stopEdit(){
+      row.classList.remove('editing');
+      select.hidden = true;
+      view.hidden = false;
+      refreshView();
+    }
+    row.addEventListener('click', () => { if(!row.classList.contains('editing')) startEdit(); });
+    select.addEventListener('change', stopEdit);
+    select.addEventListener('blur', stopEdit);
+    refreshView();
+    return {refreshView, startEdit};
+  }
+
+  function refreshAttemptsBox(lead){
+    const box = document.getElementById('attemptsBox');
+    if(!lead || lead.stage !== 'cold'){ box.hidden = true; return; }
+    box.hidden = false;
+    const n = Number(lead.contactAttempts) || 0;
+    document.getElementById('attemptsCount').textContent = `Спроб: ${n}`;
+    document.getElementById('attemptsLast').textContent = lead.lastContactAttemptAt
+      ? `Востаннє: ${lead.lastContactAttemptAt}`
+      : 'Ще не було спроб';
+  }
+
+  async function logContactAttempt(){
+    if(!editingId) return;
+    const lead = leads.find(l => l.id === editingId);
+    if(!lead) return;
+    const updates = {
+      contactAttempts: (Number(lead.contactAttempts) || 0) + 1,
+      lastContactAttemptAt: todayStr(),
+    };
+    if(!leadsCol){ Object.assign(lead, updates); }
+    else { try{ await leadsCol.doc(editingId).update(updates); }catch(e){ console.error(e); return; } }
+    Object.assign(lead, updates);
+    refreshAttemptsBox(lead);
   }
 
   function todayStr(){
@@ -1345,6 +1507,19 @@
     document.getElementById('f-offer').value = lead?.offer || '';
     document.getElementById('f-source').value = lead?.leadSource || '';
     sourceField.refreshView();
+    refreshAttemptsBox(lead);
+    document.getElementById('f-invest-goal').value = lead?.investGoal || '';
+    goalField.refreshView();
+    document.getElementById('f-location').value = lead?.location || '';
+    locationField.refreshView();
+    document.getElementById('f-ready-to-wait').value = lead?.readyToWait || '';
+    readyToWaitField.refreshView();
+    document.getElementById('f-experience').value = lead?.experience || '';
+    experienceField.refreshView();
+    document.getElementById('f-budget').value = lead?.budget || '';
+    budgetField.refreshView();
+    document.getElementById('f-deal-term').value = lead?.dealTerm || '';
+    dealTermField.refreshView();
     document.getElementById('f-prev').value = lead?.prevContact || '';
     document.getElementById('f-portrait').value = lead?.portrait || '';
     document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
@@ -1412,6 +1587,12 @@
       stage: document.getElementById('f-stage').value,
       offer: document.getElementById('f-offer').value.trim(),
       leadSource: document.getElementById('f-source').value.trim(),
+      investGoal: document.getElementById('f-invest-goal').value,
+      location: document.getElementById('f-location').value,
+      readyToWait: document.getElementById('f-ready-to-wait').value,
+      experience: document.getElementById('f-experience').value,
+      budget: document.getElementById('f-budget').value.trim(),
+      dealTerm: document.getElementById('f-deal-term').value.trim(),
       prevContact: document.getElementById('f-prev').value.trim(),
       portrait: document.getElementById('f-portrait').value.trim(),
       diagnosis: document.getElementById('f-diagnosis').value.trim(),
@@ -1606,6 +1787,13 @@
   const nameField = bindEditableField('efName', 'f-name-view', 'f-name', {emptyText: 'Без імені'});
   const sourceField = bindEditableField('efSource', 'f-source-view', 'f-source', {emptyText: 'Не вказано'});
   bindContactField();
+  const goalField = bindEditableSelectField('efGoal', 'f-invest-goal-view', 'f-invest-goal', {emptyText: 'Не вказано'});
+  const locationField = bindEditableSelectField('efLocation', 'f-location-view', 'f-location', {emptyText: 'Не вказано'});
+  const readyToWaitField = bindEditableSelectField('efReadyToWait', 'f-ready-to-wait-view', 'f-ready-to-wait', {emptyText: 'Не вказано'});
+  const experienceField = bindEditableSelectField('efExperience', 'f-experience-view', 'f-experience', {emptyText: 'Не вказано'});
+  const budgetField = bindEditableField('efBudget', 'f-budget-view', 'f-budget', {emptyText: 'Не вказано'});
+  const dealTermField = bindEditableField('efDealTerm', 'f-deal-term-view', 'f-deal-term', {emptyText: 'Не вказано'});
+  document.getElementById('logAttemptBtn').addEventListener('click', logContactAttempt);
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
     if(s) document.getElementById('sendText').value = s.text;

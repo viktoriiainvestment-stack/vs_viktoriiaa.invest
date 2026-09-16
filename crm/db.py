@@ -24,6 +24,9 @@ FIELDS = [
     "dealInfo", "dealDate", "commission", "notes", "externalId",
     "nextAction", "nextActionAt", "nextActionTime", "sortOrder",
     "autoSendText", "tgUsername",
+    # Кваліфікація (6 питань) + лічильник спроб виходу на контакт
+    "investGoal", "location", "readyToWait", "experience", "budget", "dealTerm",
+    "contactAttempts", "lastContactAttemptAt",
 ]
 
 
@@ -34,7 +37,7 @@ def get_conn():
 
 
 def _column_def(field):
-    if field == "sortOrder":
+    if field in ("sortOrder", "contactAttempts"):
         return f"{field} INTEGER DEFAULT 0"
     return f"{field} TEXT DEFAULT ''"
 
@@ -53,10 +56,14 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_leads_channel_external ON leads(channel, externalId)")
-    # Міграція для баз, створених до додавання "autoSendText"/"tgUsername".
-    for col in ("autoSendText", "tgUsername"):
+    # Міграція для баз, створених до додавання "autoSendText"/"tgUsername"/
+    # полів кваліфікації та лічильника спроб контакту.
+    for col in (
+        "autoSendText", "tgUsername", "investGoal", "location", "readyToWait",
+        "experience", "budget", "dealTerm", "contactAttempts", "lastContactAttemptAt",
+    ):
         try:
-            conn.execute(f"ALTER TABLE leads ADD COLUMN {col} TEXT DEFAULT ''")
+            conn.execute(f"ALTER TABLE leads ADD COLUMN {_column_def(col)}")
         except sqlite3.OperationalError:
             pass  # колонка вже є
     conn.execute(
@@ -114,7 +121,7 @@ def find_by_channel(channel, external_id):
 def create_lead(data):
     conn = get_conn()
     now = _now()
-    values = {f: data.get(f, 0 if f == "sortOrder" else "") for f in FIELDS}
+    values = {f: data.get(f, 0 if f in ("sortOrder", "contactAttempts") else "") for f in FIELDS}
     values["stage"] = values["stage"] or "cold"
     cur = conn.execute(
         f"""INSERT INTO leads ({', '.join(FIELDS)}, createdAt, updatedAt)
