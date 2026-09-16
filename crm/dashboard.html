@@ -241,6 +241,37 @@
   }
   .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent); outline-offset:0; border-color:var(--accent);}
   .field-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  .efield{
+    display:flex; align-items:flex-start; gap:2px; border-radius:12px;
+    padding:9px 10px; margin:0 -10px; cursor:pointer; transition:background .12s ease;
+  }
+  .efield:hover{background:var(--surface-soft);}
+  .efield.editing{cursor:default;}
+  .efield.editing:hover{background:transparent;}
+  .efield-icon{width:22px; flex:none; text-align:center; font-size:15px; line-height:26px; color:var(--ink-faint);}
+  .efield-body{flex:1; min-width:0;}
+  .efield-label{
+    font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:1px;
+  }
+  .efield-value{font-size:15px; color:var(--ink); line-height:1.4; word-break:break-word;}
+  .efield-value.efield-name{font-family:'Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:700;}
+  .efield-value.empty{color:var(--ink-faint); font-weight:400;}
+  .efield-pencil{
+    flex:none; width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    border-radius:8px; color:var(--ink-faint); font-size:13px; opacity:0;
+    transition:opacity .12s ease, background .12s ease, color .12s ease;
+  }
+  .efield:hover .efield-pencil{opacity:1; background:var(--surface); color:var(--accent);}
+  .efield.editing .efield-pencil{display:none;}
+  .efield-input{
+    width:100%; border:none; border-bottom:2px solid var(--accent); background:transparent;
+    color:var(--ink); font:inherit; font-size:15px; padding:2px 0 3px; outline:none;
+  }
+  .efield-input.efield-input-name{font-family:'Plus Jakarta Sans',sans-serif; font-size:19px; font-weight:700;}
+  .efield-hint{font-size:11.5px; color:var(--ink-faint); margin-top:5px;}
+
   .dup-warning{
     font-size:12.5px; font-weight:600; color:var(--danger); background:color-mix(in srgb, var(--danger) 12%, transparent);
     border:1px solid var(--danger); border-radius:10px; padding:8px 12px; cursor:pointer;
@@ -347,7 +378,7 @@
     .field-row{grid-template-columns:1fr;}
     /* iOS Safari авто-зумить сторінку при фокусі на полі з font-size < 16px
        і сам назад не зменшує — тому на мобільному піднімаємо до 16px. */
-    .field input, .field select, .field textarea, .search input{font-size:16px;}
+    .field input, .field select, .field textarea, .search input, .efield-input{font-size:16px;}
   }
 </style>
 </head>
@@ -433,14 +464,38 @@
     </div>
     <div class="drawer-lead-only">
     <div class="section-label">🎯 Основне</div>
-    <div class="field-row">
-      <div class="field"><label for="f-name">Ім'я</label><input id="f-name" type="text" placeholder="Ім'я та прізвище"></div>
-      <div class="field">
-        <label for="f-phone">Телефон / контакт</label>
-        <input id="f-phone" type="text" placeholder="+380…">
+
+    <div class="efield" id="efName">
+      <div class="efield-body">
+        <div class="efield-value efield-name" id="f-name-view"></div>
+        <input id="f-name" type="text" class="efield-input efield-input-name" placeholder="Ім'я та прізвище" aria-label="Ім'я" hidden>
       </div>
+      <div class="efield-pencil">✎</div>
     </div>
-    <div class="field"><label for="f-tg">Telegram-нік (якщо немає номера)</label><input id="f-tg" type="text" placeholder="@nick"></div>
+
+    <div class="efield" id="efContact">
+      <div class="efield-icon" id="f-contact-icon">📞</div>
+      <div class="efield-body">
+        <div class="efield-label">Телефон / месенджер</div>
+        <div class="efield-value" id="f-contact-view"></div>
+        <input id="f-contact" type="text" class="efield-input" placeholder="+380… або @nick" aria-label="Телефон або Telegram-нік" hidden>
+        <div class="efield-hint" id="f-contact-hint" hidden></div>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+    <input id="f-phone" type="hidden">
+    <input id="f-tg" type="hidden">
+
+    <div class="efield" id="efSource">
+      <div class="efield-icon">🔖</div>
+      <div class="efield-body">
+        <div class="efield-label">Джерело</div>
+        <div class="efield-value" id="f-source-view"></div>
+        <input id="f-source" type="text" class="efield-input" placeholder="Рекомендація, реклама, сайт…" aria-label="Джерело" hidden>
+      </div>
+      <div class="efield-pencil">✎</div>
+    </div>
+
     <div class="dup-warning" id="dupWarning" hidden></div>
     <div class="quick-actions" id="quickActions"></div>
     <div class="field-row">
@@ -457,7 +512,6 @@
       </div>
       <div class="field"><label for="f-offer">Проєкт / оффер</label><input id="f-offer" type="text" placeholder="ArcHotel, Leleka…"></div>
     </div>
-    <div class="field"><label for="f-source">Джерело</label><input id="f-source" type="text" placeholder="Рекомендація, реклама, сайт…"></div>
     </div>
 
     <div class="drawer-task-only">
@@ -680,6 +734,122 @@
     warnEl.hidden = false;
     warnEl.textContent = `⚠️ Такий номер уже є: ${match.name || match.phone} (${stageLabel(match.stage)}) — тиснути, щоб відкрити`;
     warnEl.onclick = () => openDrawer(match);
+  }
+
+  // Клік-на-текст-щоб-редагувати: справжній <input> лишається джерелом
+  // правди (той самий id, currentFormData() його й далі читає), просто
+  // ховається за текстовим виглядом, поки по ньому не клікнули.
+  function bindEditableField(rowId, viewId, inputId, opts){
+    opts = opts || {};
+    const row = document.getElementById(rowId);
+    const view = document.getElementById(viewId);
+    const input = document.getElementById(inputId);
+
+    function refreshView(){
+      const val = input.value.trim();
+      if(!val){
+        view.textContent = opts.emptyText || 'Не вказано';
+        view.classList.add('empty');
+      } else {
+        view.textContent = val;
+        view.classList.remove('empty');
+      }
+    }
+    function startEdit(){
+      row.classList.add('editing');
+      input.dataset.prev = input.value;
+      view.hidden = true;
+      input.hidden = false;
+      input.focus();
+      input.select();
+    }
+    function stopEdit(){
+      row.classList.remove('editing');
+      input.hidden = true;
+      view.hidden = false;
+      refreshView();
+      if(opts.onCommit) opts.onCommit();
+    }
+    row.addEventListener('click', () => { if(!row.classList.contains('editing')) startEdit(); });
+    input.addEventListener('blur', stopEdit);
+    input.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){ e.preventDefault(); input.blur(); }
+      if(e.key === 'Escape'){ e.preventDefault(); input.value = input.dataset.prev || ''; stopEdit(); }
+    });
+    refreshView();
+    return {refreshView, startEdit};
+  }
+
+  function contactDisplayValue(){
+    const phone = document.getElementById('f-phone').value.trim();
+    const tg = document.getElementById('f-tg').value.trim();
+    return phone || (tg ? '@' + tg : '');
+  }
+  function refreshContactView(){
+    const view = document.getElementById('f-contact-view');
+    const icon = document.getElementById('f-contact-icon');
+    const phone = document.getElementById('f-phone').value.trim();
+    const val = contactDisplayValue();
+    if(!val){
+      view.textContent = 'Не вказано — натисніть, щоб додати';
+      view.classList.add('empty');
+      icon.textContent = '➕';
+    } else {
+      view.textContent = val;
+      view.classList.remove('empty');
+      icon.textContent = phone ? '📞' : '💬';
+    }
+  }
+  function looksLikePhone(v){
+    return /^[\d+\-\s()]+$/.test(v) && !v.startsWith('@');
+  }
+  function updateContactHint(){
+    const hint = document.getElementById('f-contact-hint');
+    const v = document.getElementById('f-contact').value.trim();
+    if(!v){ hint.hidden = true; return; }
+    hint.hidden = false;
+    hint.textContent = looksLikePhone(v) ? '☎️ Розпізнано як номер телефону' : '💬 Розпізнано як Telegram-нік';
+  }
+  function commitContact(){
+    const v = document.getElementById('f-contact').value.trim();
+    if(!v){
+      document.getElementById('f-phone').value = '';
+      document.getElementById('f-tg').value = '';
+    } else if(looksLikePhone(v)){
+      document.getElementById('f-phone').value = v;
+      document.getElementById('f-tg').value = '';
+    } else {
+      document.getElementById('f-phone').value = '';
+      document.getElementById('f-tg').value = v.replace(/^@/, '');
+    }
+    refreshContactView();
+    checkDuplicate();
+  }
+  function bindContactField(){
+    const row = document.getElementById('efContact');
+    const view = document.getElementById('f-contact-view');
+    const input = document.getElementById('f-contact');
+    const hint = document.getElementById('f-contact-hint');
+    row.addEventListener('click', () => {
+      if(row.classList.contains('editing')) return;
+      row.classList.add('editing');
+      input.value = contactDisplayValue();
+      view.hidden = true; input.hidden = false;
+      updateContactHint(); hint.hidden = false;
+      input.focus(); input.select();
+    });
+    function stopEdit(save){
+      row.classList.remove('editing');
+      input.hidden = true; view.hidden = false; hint.hidden = true;
+      if(save) commitContact(); else refreshContactView();
+    }
+    input.addEventListener('input', updateContactHint);
+    input.addEventListener('blur', () => stopEdit(true));
+    input.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){ e.preventDefault(); input.blur(); }
+      if(e.key === 'Escape'){ e.preventDefault(); stopEdit(false); }
+    });
+    refreshContactView();
   }
 
   function todayStr(){
@@ -1161,7 +1331,6 @@
     document.getElementById('drawerTabTaskBtn').classList.toggle('active', isTask);
     const body = document.querySelector('#drawer .drawer-body');
     if(body) body.scrollTop = 0;
-    if(!isTask) document.getElementById('f-name').focus();
   }
 
   function openDrawer(lead, focusTask){
@@ -1170,9 +1339,12 @@
     document.getElementById('f-name').value = lead?.name || '';
     document.getElementById('f-phone').value = lead?.phone || '';
     document.getElementById('f-tg').value = lead?.tgUsername || '';
+    nameField.refreshView();
+    refreshContactView();
     document.getElementById('f-stage').value = lead?.stage || 'cold';
     document.getElementById('f-offer').value = lead?.offer || '';
     document.getElementById('f-source').value = lead?.leadSource || '';
+    sourceField.refreshView();
     document.getElementById('f-prev').value = lead?.prevContact || '';
     document.getElementById('f-portrait').value = lead?.portrait || '';
     document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
@@ -1211,6 +1383,7 @@
     drawer.hidden = false;
     scrim.hidden = false;
     switchDrawerTab(lead && focusTask ? 'task' : 'lead');
+    if(!lead) requestAnimationFrame(() => nameField.startEdit());
   }
   function closeDrawer(){
     drawer.hidden = true; scrim.hidden = true; editingId = null;
@@ -1430,7 +1603,9 @@
     }
     updateGcalLink();
   });
-  document.getElementById('f-phone').addEventListener('input', checkDuplicate);
+  const nameField = bindEditableField('efName', 'f-name-view', 'f-name', {emptyText: 'Без імені'});
+  const sourceField = bindEditableField('efSource', 'f-source-view', 'f-source', {emptyText: 'Не вказано'});
+  bindContactField();
   document.getElementById('sendScriptSelect').addEventListener('change', (e)=>{
     const s = scripts.find(s=>String(s.id)===e.target.value);
     if(s) document.getElementById('sendText').value = s.text;
