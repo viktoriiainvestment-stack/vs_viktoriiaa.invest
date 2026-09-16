@@ -43,7 +43,12 @@ def require_admin(fn):
 
 @app.route("/")
 def dashboard():
-    return send_from_directory(Path(__file__).parent, "dashboard.html")
+    # Без явного no-cache браузер (особливо мобільний Safari) любить
+    # показувати стару збережену версію інтерфейсу навіть після
+    # деплою нової — і виглядає так, ніби оновлення "не дійшло".
+    response = send_from_directory(Path(__file__).parent, "dashboard.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 # ---- leads API ----
