@@ -281,6 +281,13 @@
   }
   .stage-pill::after{content:'▾'; opacity:.85; font-size:9px; margin-left:2px;}
 
+  #qualificationFields{display:flex; flex-direction:column; gap:2px;}
+  #qualificationFields.collapsed .efield{padding:4px 10px; margin:0 -10px;}
+  #qualificationFields.collapsed .efield-label{display:none;}
+  #qualificationFields.collapsed .efield-icon{width:16px; font-size:12px; line-height:20px;}
+  #qualificationFields.collapsed .efield-value{font-size:13px;}
+  #qualificationFields.collapsed .efield-pencil{width:20px; height:20px; font-size:11px;}
+
   .attempts{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:var(--surface-soft); border:1px solid var(--line); border-radius:14px;
@@ -545,8 +552,9 @@
       <button type="button" class="btn primary small" id="logAttemptBtn">📞 Ще спроба сьогодні</button>
     </div>
 
-    <div class="section-label">🧭 Кваліфікація</div>
+    <div class="section-label" id="qualificationLabel">🧭 Кваліфікація</div>
 
+    <div id="qualificationFields">
     <div class="efield" id="efGoal">
       <div class="efield-icon">🎯</div>
       <div class="efield-body">
@@ -636,6 +644,7 @@
         <input id="f-offer" type="text" class="efield-input" placeholder="ArcHotel, Leleka…" aria-label="Проєкт / оффер" hidden>
       </div>
       <div class="efield-pencil">✎</div>
+    </div>
     </div>
 
     <div class="section-label">💬 Скрипти</div>
@@ -1030,6 +1039,9 @@
       select.hidden = true;
       view.hidden = false;
       refreshStageView();
+      const ctx = currentStageContext();
+      refreshAttemptsBox(ctx);
+      refreshQualificationSection(ctx);
     }
     row.addEventListener('click', () => { if(select.hidden) startEdit(); });
     select.addEventListener('change', stopEdit);
@@ -1046,6 +1058,32 @@
     document.getElementById('attemptsLast').textContent = lead.lastContactAttemptAt
       ? `Востаннє: ${lead.lastContactAttemptAt}`
       : 'Ще не було спроб';
+  }
+
+  // Кваліфікація змінює вигляд залежно від стадії: у «нових» лідах її
+  // взагалі не видно (нема чого показувати), у «кваліфікації» — повна
+  // форма з підписами, далі (якісний лід і пізніше) — та сама секція,
+  // просто згорнута у щільний список (відповіді вже заповнені).
+  function refreshQualificationSection(lead){
+    const label = document.getElementById('qualificationLabel');
+    const fields = document.getElementById('qualificationFields');
+    const stage = lead?.stage || 'cold';
+    if(stage === 'cold'){
+      label.hidden = true;
+      fields.hidden = true;
+      return;
+    }
+    label.hidden = false;
+    fields.hidden = false;
+    fields.classList.toggle('collapsed', stage !== 'qualification');
+  }
+
+  // Якщо стадію міняють просто в картці (не закриваючи її) — блоки
+  // «Спроби»/«Кваліфікація» мають одразу підлаштуватись, без
+  // перевідкриття картки.
+  function currentStageContext(){
+    const base = editingId ? leads.find(l => l.id === editingId) : null;
+    return {...(base || {}), stage: document.getElementById('f-stage').value};
   }
 
   async function logContactAttempt(){
@@ -1571,6 +1609,7 @@
     dealTermField.refreshView();
     document.getElementById('f-offer').value = lead?.offer || '';
     offerField.refreshView();
+    refreshQualificationSection(lead);
     document.getElementById('f-prev').value = lead?.prevContact || '';
     document.getElementById('f-diagnosis').value = lead?.diagnosis || '';
     document.getElementById('f-decision').value = lead?.decision || '';
