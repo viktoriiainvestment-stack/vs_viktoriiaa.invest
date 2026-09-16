@@ -78,14 +78,59 @@ LEADS = [
 ]
 
 
+PROJECTS = [
+    dict(
+        title="MIY by Five Forces",
+        location="Одеса, історичний центр (Польський узвіз)",
+        budget="перший внесок від $23 000",
+        link="https://drive.google.com/file/d/1GEit2ZWP6ajg07dPFPShLHk9bfdYYYwl/view?usp=drivesdk",
+        text=(
+            "5-зірковий готель-інвестпроєкт у серці Одеси, від SPATIUM GROUP, "
+            "оператор EDEM FAMILY GROUP. Схема «купівля номера = пасивний дохід». "
+            "Rooftop-басейн з морською водою, MediSpa 1000 м² від Edem Clinic, "
+            "3 ресторани, fashion-promenade, бізнес-зони."
+        ),
+    ),
+    dict(
+        title="Leleka by Odesa",
+        location="Одеса, Приморська",
+        budget="від $25 386 (40% внесок) до $63 466 (100% оплата) · площа від 24,41 м² · дохідність 10–12% річних",
+        link="https://docs.google.com/spreadsheets/d/1Ttv0tKyJiPqDZJQMf5Lptn5vX3zgY9ekGCOPwRyte7A/edit?usp=drivesdk",
+        text=(
+            "Медичний центр нового покоління (пологовий будинок) в Одесі, "
+            "вул. Приморська. Готовність — серпень 2027, поетапна оплата від "
+            "40% внеску. Окупність 7–10 років, капіталізація активу за період "
+            "будівництва 23–45%."
+        ),
+    ),
+    dict(
+        title="SPATIUM HOTEL",
+        location="",
+        budget="",
+        link="https://drive.google.com/drive/folders/1VcRyRkq-exUPUYMEJx3ucRdx-Tc26e6M",
+        text="Деталі ще не завантажені в Google Drive — заповніть тут самі, коли з'являться матеріали.",
+    ),
+]
+
+
 def run():
     db.init_db()
     if db.list_leads():
-        print("Таблиця leads не порожня — пропускаю сідування.")
-        return
-    for lead in LEADS:
-        db.create_lead(lead)
-    print(f"Додано {len(LEADS)} лідів.")
+        print("Таблиця leads не порожня — пропускаю сідування лідів.")
+    else:
+        for lead in LEADS:
+            db.create_lead(lead)
+        print(f"Додано {len(LEADS)} лідів.")
+
+    if db.list_projects():
+        print("Таблиця projects не порожня — пропускаю сідування проєктів.")
+    else:
+        for project in PROJECTS:
+            db.create_project(
+                project["title"], project["location"], project["budget"],
+                project["link"], project["text"],
+            )
+        print(f"Додано {len(PROJECTS)} проєктів.")
 
 
 if __name__ == "__main__":
