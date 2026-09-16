@@ -176,10 +176,10 @@ UKRAINE_CARDS = [
         "image": "assets/miy_by_five_forces.jpg",
         "criteria": {
             "location": ["odesa", "any"],
-            # Точної мінімальної суми в тексті немає — припускаю, що вхід
-            # нижчий за Leleka (готельний номер дешевший за м.кв. у центрі),
-            # тож додала й co_invest від $5,000. Уточніть точну суму.
-            "format": ["co_invest", "installment", "full_payment"],
+            # Реальний перший внесок $23,000 (за даними каталогу
+            # "Проєкти" в CRM, з буклету забудовника) — вище порогу
+            # co_invest ($5k+), тож ця картка йому не підходить.
+            "format": ["installment", "full_payment"],
             "construction": ["off_plan"],
         },
         "text": (
