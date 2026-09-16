@@ -897,7 +897,19 @@
   let editingId = null;
   let query = '';
   let toastTimer = null;
+  // Токен читаємо з localStorage, і якщо в адресі є ?token=... — з неї теж
+  // (і одразу зберігаємо). Другий шлях рятує там, де localStorage не
+  // тримається — приватні вкладки Safari, деякі "додати на екран
+  // Домівки" сценарії: досить один раз зберегти собі посилання виду
+  // https://…/?token=ВАШТОКЕН, і воно більше нічого не питає.
   let token = localStorage.getItem('liika_token') || '';
+  try{
+    const urlToken = new URLSearchParams(location.search).get('token');
+    if(urlToken){
+      token = urlToken.trim();
+      localStorage.setItem('liika_token', token);
+    }
+  }catch(e){}
 
   function esc(s){
     return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
